@@ -1,14 +1,5 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
 
-
-############################################################################
-# Standard Setup Behavior
-############################################################################
-
-# See https://wiki.zshell.dev/community/zsh_plugin_standard#zero-handling
-0="${ZERO:-${${0:#$ZSH_ARGZERO}:-${(%):-%N}}}"
-0="${${(M)0:#/*}:-$PWD/$0}"
-
 ############################################################################
 # This should be loaded prior to evaluating this file.
 ############################################################################
@@ -16,12 +7,16 @@
 source "zplugins.plugin.zsh"
 
 ############################################################################
-# Actual Plugin Code
+# Plugin Setup
 ############################################################################
+
+0="$(@zplugin_normalize_zero "$0")"
 
 @zplugin_declare_global foo "$0" aliases functions bin_dir function_dir
 
-echo "FOO(plugin global): ${(kv)FOO}"
+############################################################################
+# Plugin Lifecycle
+############################################################################
 
 foo_plugin_init() {
     builtin emulate -L zsh
@@ -44,6 +39,14 @@ foo_plugin_unload() {
     unfunction foo_plugin_unload
 }
 @zplugin_remember_fn foo foo_plugin_unload
+
+############################################################################
+# Plugin Public Things
+############################################################################
+
+############################################################################
+# Plugin Initialization
+############################################################################
 
 echo "REGISTERED: ${ZPLUGINS[_PLUGINS]}"
 echo "FOO(plugin global): ${(kv)FOO}"

@@ -1,8 +1,10 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
 #
 # Plugin Name: zplugins
-# Description: A Zsh plugin to provide standard plugin functionality for plugin development.
+# Description: Zsh plugin to provide standard plugin functionality for plugin development.
 # Repository: https://github.com/johnstonskj/zsh-zplugins-plugin
+# Version: 0.1.0
+# License: MIT AND Apache-2.0
 #
 # Public variables:
 #
@@ -10,15 +12,18 @@
 #   * `_FUNCTIONS`; a list of all functions defined by the plugin.
 #   * `_PLUGIN_DIR`; the directory the plugin is sourced from.
 #   * `_PLUGINS`; the list of all registered plugins.
+#   * `_AS_MANAGER`; determines if the plugin acts as a plugin manager.
+# * `ZPLUGINS_USE_AS_MANAGER`; if set to a non-empty value the plugin will act as
+#   a limited plugin manager.
 #
 
 ############################################################################
 # Standard Setup Behavior
 ############################################################################
 
-# See https://wiki.zshell.dev/community/zsh_plugin_standard#zero-handling
-0="${ZERO:-${${0:#$ZSH_ARGZERO}:-${(%):-%N}}}"
-0="${${(M)0:#/*}:-$PWD/$0}"
+# In a plugin use `@zplugin_normalize_zero $"{0}"` to get a normalized path.
+0="${ZERO:-${${0:#${ZSH_ARGZERO}}:-${(%):-%N}}}"
+0="${${(M)0:#/*}:-${PWD}/$0}"
 
 ############################################################################
 # Plugin Global Variables
@@ -27,8 +32,10 @@
 # See https://wiki.zshell.dev/community/zsh_plugin_standard#standard-plugins-hash
 declare -gA ZPLUGINS
 ZPLUGINS[_PLUGIN_DIR]="${0:h}"
-ZPLUGINS[_FUNCTIONS]=""
-ZPLUGINS[_PLUGINS]=""
+ZPLUGINS[_PLUGIN_FILE]="${0:t}"
+ZPLUGINS[_FUNCTIONS]=''
+ZPLUGINS[_AS_MANAGER]="${ZPLUGINS_USE_AS_MANAGER}"
+ZPLUGINS[_PLUGINS]=''
 
 ############################################################################
 # Track Plugin Functions
@@ -51,15 +58,29 @@ ZPLUGINS[_PLUGINS]=""
 # Plugin Global Variable Helpers
 ############################################################################
 
+@zplugin_normalize_zero() {
+    builtin emulate -L zsh
+
+    local zero="${1}"
+
+    # See https://wiki.zshell.dev/community/zsh_plugin_standard#zero-handling
+    zero="${ZERO:-${${zero:#${ZSH_ARGZERO}}:-${(%):-%N}}}"
+    printf '%s' "${${(M)zero:#/*}:-${PWD}/${zero}}"
+}
+
 @zplugin_declare_global() {
     builtin emulate -L zsh
 
-    local plugin_global="${1:u}"
+    local plugin_name="${1}"
+    local plugin_global="${plugin_name:u}"
     local plugin_dir="${2:h}"
+    local plugin_file="${2:t}"
 
     # See https://wiki.zshell.dev/community/zsh_plugin_standard#standard-plugins-hash
     declare -gA ${plugin_global}
+    
     eval "${plugin_global}[_PLUGIN_DIR]"="${plugin_dir}"
+    eval "${plugin_global}[_PLUGIN_FILE]"="${plugin_file}"
 
     shift 2
     while (( $# > 0 )); do
@@ -72,11 +93,18 @@ ZPLUGINS[_PLUGINS]=""
                 eval "${plugin_global}[_FUNCTIONS]"=''
                 ;;
             bin_dir)
-                eval "${plugin_global}[_BIN_DIR]"="${plugin_dir}/bin"
+                if [[ -d "${plugin_dir}/bin" ]]; then
+                    eval "${plugin_global}[_PLUGIN_BIN_DIR]"="${plugin_dir}/bin"
+                fi
                 ;;
             function_dir)
-                eval "${plugin_global}[_FN_DIR]"="${plugin_dir}/functions"
+                if [[ -d "${plugin_dir}/functions" ]]; then
+                    eval "${plugin_global}[_PLUGIN_FNS_DIR]"="${plugin_dir}/functions"
+                fi
                 ;;
+            save)
+                shift
+                @zplugin_save_global "${plugin_name}" "${1}"
         esac
         shift
     done
@@ -107,14 +135,23 @@ ZPLUGINS[_PLUGINS]=""
 # Plugin State Functions
 ############################################################################
 
-@zplugin_install_dir() {
+@zplugin_plugin_dir() {
     builtin emulate -L zsh
 
     local plugin_global="${1:u}"
 
     printf '%s' "${(P)${plugin_global}[_PLUGIN_DIR]}"
 }
-@zplugin_remember_fn zplugins @zplugin_install_dir
+@zplugin_remember_fn zplugins @zplugin_plugin_dir
+
+@zplugin_plugin_file() {
+    builtin emulate -L zsh
+
+    local plugin_global="${1:u}"
+
+    printf '%s' "${(P)${plugin_global}[_PLUGIN_FILE]}"
+}
+@zplugin_remember_fn zplugins @zplugin_plugin_file
 
 @zplugin_functions_dir() {
     builtin emulate -L zsh
@@ -134,6 +171,61 @@ ZPLUGINS[_PLUGINS]=""
 }
 @zplugin_remember_fn zplugins @zplugin_bin_dir
 
+.zplugin_comment_field() {
+    builtin emulate -L zsh
+
+    local plugin_global="${1:u}"
+    local plugin_path="${(P)${plugin_global}[_PLUGIN_DIR]}/${(P)${plugin_global}[_PLUGIN_FILE]}"
+    local field_name="${2}"
+
+    local field_value=$(grep -m 1 -E "^#[ \\t]+${field_name}:" "${plugin_path}" | cut -d':' -f2-)
+    if $?; then
+        printf '%s' "${field_value//^[[:space:]]+|[[:space:]]+$//}"
+    else
+        printf ''
+    fi
+}
+@zplugin_remember_fn zplugins .zplugin_comment_field
+
+@zplugin_short_description() {
+    builtin emulate -L zsh
+
+    .zplugin_comment_field zplugins Description
+}
+@zplugin_remember_fn zplugins @zplugin_short_description
+
+@zplugin_repository() {
+    builtin emulate -L zsh
+
+    .zplugin_comment_field zplugins Repository
+}
+@zplugin_remember_fn zplugins @zplugin_repository
+
+@zplugin_homepage() {
+    builtin emulate -L zsh
+
+    .zplugin_comment_field zplugins Homepage
+}
+@zplugin_remember_fn zplugins @zplugin_homepage
+
+@zplugin_version() {
+    builtin emulate -L zsh
+
+    .zplugin_comment_field zplugins Version
+}
+@zplugin_remember_fn zplugins @zplugin_version
+
+@zplugin_license() {
+    builtin emulate -L zsh
+
+    .zplugin_comment_field zplugins License
+}
+@zplugin_remember_fn zplugins @zplugin_license
+
+############################################################################
+# Plugin Path Functions
+############################################################################
+
 ############################################################################
 # Track Plugin Functions
 ############################################################################
@@ -144,10 +236,12 @@ ZPLUGINS[_PLUGINS]=""
     local plugin_global="${1:u}"
     local fn_list="${${(P)plugin_global}[_FUNCTIONS]}"
 
-    local fn_name
-    for fn_name in ${(s:,:)fn_list}; do
-        whence -w "${fn_name}" &> /dev/null && unfunction ${fn_name}
-    done
+    if [[ -n "${fn_list}" ]]; then
+        local fn_name
+        for fn_name in ${(s:,:)fn_list}; do
+            whence -w "${fn_name}" &> /dev/null && unfunction ${fn_name}
+        done
+    fi
 }
 @zplugin_remember_fn zplugins @zplugin_unfunction_all
 
@@ -176,10 +270,12 @@ ZPLUGINS[_PLUGINS]=""
     local plugin_global="${1:u}"
     local alias_list="${${(P)plugin_global}[_ALIASES]}"
 
-    local alias_name
-    for alias_name in ${(s:,:)alias_list}; do
-        unalias ${alias_name}
-    done
+    if [[ -n "${alias_list}" ]]; then
+        local alias_name
+        for alias_name in ${(s:,:)alias_list}; do
+            unalias ${alias_name}
+        done
+    fi
 }
 @zplugin_remember_fn zplugins @zplugin_unalias_all
 
@@ -191,9 +287,25 @@ ZPLUGINS[_PLUGINS]=""
     builtin emulate -L zsh
 
     local plugin_name="${1}"
+    local plugin_global="${plugin_name:u}"
+    local fn_name
 
     if [[ " ${ZPLUGINS[_PLUGINS]} " != *" ${plugin_name} "* ]]; then
+        # Autoload functions from the functions directory if set.
+        if [[ -n "${${(P)plugin_global}[_PLUGIN_FNS_DIR]}" ]]; then
+            for fn_name in ${${(P)plugin_global}[_PLUGIN_FNS_DIR]}/*(.:t); do
+                autoload -Uz ${fn_name}
+                @zplugin_remember_fn ${plugin_name} ${fn_name}
+            done
+        fi
+
+        # Add to the list of registered plugins, do this last.
         ZPLUGINS[_PLUGINS]="${ZPLUGINS[_PLUGINS]} ${plugin_name}"
+
+        if [[ -n "ZPLUGINS[_AS_MANAGER]" ]]; then
+            # If we are the plugin manager then update this.
+            zsh_loaded_plugins="${ZPLUGINS[_PLUGINS]}"
+        fi
     fi
 }
 @zplugin_remember_fn zplugins @zplugin_register
@@ -202,8 +314,39 @@ ZPLUGINS[_PLUGINS]=""
     builtin emulate -L zsh
 
     local plugin_name="${1}"
+    local plugin_global="${plugin_name:u}"
     
-    ZPLUGINS[_PLUGINS]="${ZPLUGINS[_PLUGINS]/ ${plugin_name}/}"
+    if [[ ${plugin_name} == zplugins && -n "${ZPLUGINS[_AS_MANAGER]}" ]]; then
+        # If we are the plugin manager then do not remove the plugin.
+        :
+    elif [[ " ${ZPLUGINS[_PLUGINS]} " != *" ${plugin_name} "* ]]; then
+        # Remove from the list of registered plugins, do this first.
+        ZPLUGINS[_PLUGINS]="${ZPLUGINS[_PLUGINS]/ ${plugin_name}/}"
+
+        if [[ -n "ZPLUGINS[_AS_MANAGER]" ]]; then
+            # If we are the plugin manager then update this.
+            zsh_loaded_plugins="${ZPLUGINS[_PLUGINS]}"
+        fi
+
+        # Remove all remembered functions.
+        @zplugin_unfunction_all ${plugin_name}
+        
+        # Remove all remembered aliases.
+        @zplugin_unalias_all ${plugin_name}
+
+        # Remove bin directory from path.
+        if [[ -n "${${(P)plugin_global}[_PLUGIN_BIN_DIR]}" && -d "${plugin_dir}/bin" ]]; then
+            path=( "${(@)path:#${${(P)plugin_global}[_PLUGIN_BIN_DIR]}}" )
+        fi
+
+        # Remove functions directory from fpath.
+        if [[ -n "${${(P)plugin_global}[_PLUGIN_FNS_DIR]}" && -d "${plugin_dir}/functions" ]]; then
+            fpath=( "${(@)fpath:#${${(P)plugin_global}[_PLUGIN_FNS_DIR]}}" )
+        fi
+
+        # Remove the global data variable, do this last.
+        unset ${plugin_global}
+    fi
 }
 @zplugin_remember_fn zplugins @zplugin_unregister
 
@@ -212,7 +355,12 @@ ZPLUGINS[_PLUGINS]=""
 
     local plugin_name="${1}"
 
-    [[ " ${ZPLUGINS[_PLUGINS]} " == *" ${plugin_name} "* ]]
+    if [[ -n "ZPLUGINS[_AS_MANAGER]" ]]; then
+        # If we are the plugin manager then check this.
+        return [[ " ${ZPLUGINS[_PLUGINS]} " == *" ${plugin_name} "* ]]
+    else
+        return [[ " ${zsh_loaded_plugins[*]} " == *" ${plugin_name} "* ]]
+    fi
 }
 @zplugin_remember_fn zplugins @zplugin_is_registered
 
@@ -224,16 +372,28 @@ zplugins_plugin_init() {
     builtin emulate -L zsh
 
     # Initialization code can go here.
-}
+    if [[ (! -v zsh_loaded_plugins && ! -v PMSPEC) || -n "${ZPLUGINS[_AS_MANAGER]}" ]]; then
+        ZPLUGINS[_AS_MANAGER]="Yes"
+        typeset -ga zsh_loaded_plugins
+        typeset -g PMSPEC="fbis"
+    fi
 
+    # Finally, register the plugin.
+    @zplugin_register zplugins
+}
 @zplugin_remember_fn zplugins @zplugins_plugin_init
 
 zplugins_plugin_unload() {
     builtin emulate -L zsh
 
-    @zplugin_unfunction_all foo
-    @zplugin_unalias_all foo
+    # Remove from registered plugins first.
+    @zplugins_unregister zplugins
 
+    # Remove all remembered functions and aliases.
+    @zplugin_unfunction_all zplugins
+    @zplugin_unalias_all zplugins
+
+    # Remove the plugins global state variable.
     unset ZPLUGINS
 
     unfunction zplugins_plugin_unload
