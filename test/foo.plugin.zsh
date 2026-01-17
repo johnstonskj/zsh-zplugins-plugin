@@ -1,4 +1,9 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
+#
+# Name: foo
+# Description: An example plugin
+# Version: 0.0.1
+#
 
 ############################################################################
 # This should be loaded prior to evaluating this file.
@@ -12,7 +17,7 @@ source "zplugins.plugin.zsh"
 
 0="$(@zplugin_normalize_zero "$0")"
 
-@zplugin_declare_global foo "$0" aliases functions bin_dir function_dir
+@zplugin_declare_global foo "$0"
 
 ############################################################################
 # Plugin Lifecycle
@@ -21,6 +26,7 @@ source "zplugins.plugin.zsh"
 foo_plugin_init() {
     builtin emulate -L zsh
 
+    # This should be the LAST step.
     @zplugin_register foo
 }
 @zplugin_remember_fn foo foo_plugin_init
@@ -30,11 +36,8 @@ echo "FOO(plugin global): ${(kv)FOO}"
 foo_plugin_unload() {
     builtin emulate -L zsh
 
-    @zplugin_unfunction_all foo
-    @zplugin_unalias_all foo
+    # This should be the FIRST step.
     @zplugin_unregister foo
-
-    unset FOO
 
     unfunction foo_plugin_unload
 }

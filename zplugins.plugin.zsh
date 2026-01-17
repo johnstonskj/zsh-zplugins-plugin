@@ -11,6 +11,7 @@
 # * `ZPLUGINS`; plugin-defined global associative array with the following keys:
 #   * `_FUNCTIONS`; a list of all functions defined by the plugin.
 #   * `_PLUGIN_DIR`; the directory the plugin is sourced from.
+#   * `_PLUGIN_FILE`; the file in _PLUGIN_DIR the plugin is sourced from.
 #   * `_PLUGINS`; the list of all registered plugins.
 #   * `_AS_MANAGER`; determines if the plugin acts as a plugin manager.
 # * `ZPLUGINS_USE_AS_MANAGER`; if set to a non-empty value the plugin will act as
@@ -81,30 +82,25 @@ ZPLUGINS[_PLUGINS]=''
     
     eval "${plugin_global}[_PLUGIN_DIR]"="${plugin_dir}"
     eval "${plugin_global}[_PLUGIN_FILE]"="${plugin_file}"
+    eval "${plugin_global}[_ALIASES]"=''
+    eval "${plugin_global}[_FUNCTIONS]"=''
 
     shift 2
     while (( $# > 0 )); do
         local item="${1}"
         case "${item}" in
-            aliases)
-                eval "${plugin_global}[_ALIASES]"=''
+            path)
+                shift
+                @zplugin_add_to_path "${plugin_name}" "${1}"
                 ;;
-            functions)
-                eval "${plugin_global}[_FUNCTIONS]"=''
-                ;;
-            bin_dir)
-                if [[ -d "${plugin_dir}/bin" ]]; then
-                    eval "${plugin_global}[_PLUGIN_BIN_DIR]"="${plugin_dir}/bin"
-                fi
-                ;;
-            function_dir)
-                if [[ -d "${plugin_dir}/functions" ]]; then
-                    eval "${plugin_global}[_PLUGIN_FNS_DIR]"="${plugin_dir}/functions"
-                fi
+            fpath)
+                shift
+                @zplugin_add_to_fpath "${plugin_name}" "${1}"
                 ;;
             save)
                 shift
                 @zplugin_save_global "${plugin_name}" "${1}"
+                ;;
         esac
         shift
     done
@@ -280,24 +276,116 @@ ZPLUGINS[_PLUGINS]=''
 @zplugin_remember_fn zplugins @zplugin_unalias_all
 
 ############################################################################
+# Plugin Custom Paths
+############################################################################
+
+@zplugin_add_to_path() {
+    local plugin_name="${1}"
+    local plugin_global="${plugin_name:u}"
+    local dir="${2}"
+    if [[ -n "${dir}" && ${path[(i)${dir}]} -gt ${#path} ]]; then
+        eval "${plugin_global}[_PATH]"="${plugin_global}[_PATH]:${dir}"
+        path+=( "${dir}" )
+        export PATH
+    fi
+}
+
+@zplugin_remove_from_path() {
+    local plugin_name="${1}"
+    local plugin_global="${plugin_name:u}"
+    local dir="${2}"
+    if [[ ${path[(i)${dir}]} -le ${#path} ]]; then
+        eval "${plugin_global}[_PATH]"="${plugin_global}[_PATH]:${dir}"
+        path=( "${(@)path:#${dir}}" )
+        export PATH
+    fi
+}
+
+@zplugin_add_to_fpath() {
+    local plugin_name="${1}"
+    local plugin_global="${plugin_name:u}"
+    local dir="${2}"
+    if [[ -n "${dir}" && "${fpath[(i)${dir}]}" > "${#fpath}" ]]; then
+        eval "${plugin_global}[_FPATH]"="${plugin_global}[_FPATH]:${dir}"
+        fpath+=( "${dir}" )
+        export FPATH
+    fi
+}
+
+@zplugin_remove_from_fpath() {
+    local plugin_name="${1}"
+    local plugin_global="${plugin_name:u}"
+    local dir="${2}"
+    if [[ ${path[(i)${dir}]} -le ${#path} ]]; then
+        eval "${plugin_global}[_FPATH]"="${plugin_global}[_FPATH]:${dir}"
+        fpath=( "${(@)path:#${dir}}" )
+        export FPATH
+    fi
+}
+
+############################################################################
 # Plugin Registration
 ############################################################################
+
+@zplugin_register_bin_dir() {
+    local plugin_name="${1}"
+    local plugin_global="${plugin_name:u}"
+    local bin_dir="${${(P)plugin_global}[_PLUGIN_DIR]}/bin"
+    if [[ -d "${bin_dir}" && ${path[(i)${bin_dir}]} -gt ${#path} ]]; then
+        path+=( "${bin_dir}" )
+        export PATH
+    fi
+}
+
+@zplugin_unregister_bin_dir() {
+    local plugin_name="${1}"
+    local plugin_global="${plugin_name:u}"
+    local bin_dir="${${(P)plugin_global}[_PLUGIN_DIR]}/bin"
+    if [[ -d "${bin_dir}" && ${path[(i)${bin_dir}]} -le ${#path} ]]; then
+        path=( "${(@)path:#${bin_dir}}" )
+        export PATH
+    fi
+}
+
+@zplugin_register_function_dir() {
+    local plugin_name="${1}"
+    local plugin_global="${plugin_name:u}"
+    function_dir="${${(P)plugin_global}[_PLUGIN_DIR]}/functions"
+    if [[ -d "${function_dir}" && ${fpath[(i)${function_dir}]} -gt ${#fpath} ]]; then
+        fpath+=( "${function_dir}" )
+        export FPATH
+
+        # Autoload functions from the functions directory.
+        for fn_name in ${function_dir}/*(N.:t); do
+            autoload -Uz ${fn_name}
+            @zplugin_remember_fn ${plugin_name} ${fn_name}
+        done
+    fi
+}
+
+@zplugin_unregister_function_dir() {
+    local plugin_name="${1}"
+    local plugin_global="${plugin_name:u}"
+    local function_dir="${${(P)plugin_global}[_PLUGIN_DIR]}/functions"
+    if [[ -d "${function_dir}" && ${fpath[(i)${function_dir}]} -le ${#fpath} ]]; then
+        fpath=( "${(@)fpath:#${function_dir}}" )
+        export FPATH
+    fi
+}
 
 @zplugin_register() {
     builtin emulate -L zsh
 
     local plugin_name="${1}"
     local plugin_global="${plugin_name:u}"
-    local fn_name
+    local fn_name bin_dir function_dir add_path
 
     if [[ " ${ZPLUGINS[_PLUGINS]} " != *" ${plugin_name} "* ]]; then
-        # Autoload functions from the functions directory if set.
-        if [[ -n "${${(P)plugin_global}[_PLUGIN_FNS_DIR]}" ]]; then
-            for fn_name in ${${(P)plugin_global}[_PLUGIN_FNS_DIR]}/*(.:t); do
-                autoload -Uz ${fn_name}
-                @zplugin_remember_fn ${plugin_name} ${fn_name}
-            done
-        fi
+        # Add bin directory to path if exists.
+        @zplugin_register_bin_dir ${plugin_name}
+
+        # Add functions directory to fpath if exists.
+        @zplugin_register_function_dir ${plugin_name}
 
         # Add to the list of registered plugins, do this last.
         ZPLUGINS[_PLUGINS]="${ZPLUGINS[_PLUGINS]} ${plugin_name}"
@@ -315,9 +403,10 @@ ZPLUGINS[_PLUGINS]=''
 
     local plugin_name="${1}"
     local plugin_global="${plugin_name:u}"
+    local bin_dir function_dir rem_path
     
     if [[ ${plugin_name} == zplugins && -n "${ZPLUGINS[_AS_MANAGER]}" ]]; then
-        # If we are the plugin manager then do not remove the plugin.
+        # If we *are* the plugin manager then do not remove the plugin.
         :
     elif [[ " ${ZPLUGINS[_PLUGINS]} " != *" ${plugin_name} "* ]]; then
         # Remove from the list of registered plugins, do this first.
@@ -334,15 +423,21 @@ ZPLUGINS[_PLUGINS]=''
         # Remove all remembered aliases.
         @zplugin_unalias_all ${plugin_name}
 
-        # Remove bin directory from path.
-        if [[ -n "${${(P)plugin_global}[_PLUGIN_BIN_DIR]}" && -d "${plugin_dir}/bin" ]]; then
-            path=( "${(@)path:#${${(P)plugin_global}[_PLUGIN_BIN_DIR]}}" )
-        fi
+        # Remove bin directory from path if it exists.
+        @zplugin_unregister_bin_dir
 
-        # Remove functions directory from fpath.
-        if [[ -n "${${(P)plugin_global}[_PLUGIN_FNS_DIR]}" && -d "${plugin_dir}/functions" ]]; then
-            fpath=( "${(@)fpath:#${${(P)plugin_global}[_PLUGIN_FNS_DIR]}}" )
-        fi
+        # Remove custom directories from path.
+        for rem_path in ${(ps/:/)${${(P)plugin_global}[_PATH]}}; do
+            @zplugin_remove_from_path "${rem_path}"
+        done
+
+        # Remove functions directory from fpath if it exists.
+        @zplugin_unregister_function_dir
+
+        # Remove custom directories from fpath.
+        for rem_path in ${(ps/:/)${${(P)plugin_global}[_FPATH]}}; do
+            @zplugin_remove_from_fpath "${rem_path}"
+        done
 
         # Remove the global data variable, do this last.
         unset ${plugin_global}

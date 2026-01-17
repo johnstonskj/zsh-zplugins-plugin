@@ -26,20 +26,20 @@ TBD
 # Name: foo
 # Description: An example plugin
 # Version: 0.0.1
-# License: MIT
 #
 
 ## Plugin Setup
 
 0="$(@zplugin_normalize_zero "$0")"
 
-@zplugin_declare_global foo "$0" aliases functions bin_dir function_dir
+@zplugin_declare_global foo "$0" aliases functions bin_dir function_dir 
 
 ## Plugin Lifecycle
 
 foo_plugin_init() {
     builtin emulate -L zsh
 
+    # This should be the LAST step.
     @zplugin_register foo
 }
 @zplugin_remember_fn foo foo_plugin_init
@@ -47,11 +47,8 @@ foo_plugin_init() {
 foo_plugin_unload() {
     builtin emulate -L zsh
 
-    @zplugin_unfunction_all foo
-    @zplugin_unalias_all foo
+    # This should be the FIRST step.
     @zplugin_unregister foo
-
-    unset FOO
 
     unfunction foo_plugin_unload
 }
@@ -94,11 +91,13 @@ Normalize the plugin path from the top-level `${0}` as per the standard
 
 Flags:
 
-* `aliases`
-* `bin_dir`
-* `function_dir`
-* `functions`
-* `save <VARNAME>`
+* `aliases`; this plugin defines aliases, set an `_ALIASES` variable.
+* `bin_dir`; this function has a `bin` sub-directory, add it to the path.
+* `function_dir`; this function has a `functions` sub-directory, add it to the fpath.
+* `functions`; this plugin defines functions, set a `_FUNCTIONS` variable.
+* `fpath <PATH>`; add PATH to the fpath; no functions are autoloaded from this path.
+* `path <PATH>`; add PATH to the path.
+* `save <VARNAME>`; save the content of VARNAME in the `_OLD_VARNAME` variable.
 
 Given a plugin in the file `/home/user/zsh/zsh-myplugin-plugin/myplugin.plugin.zsh`,
 the call pattern below,
@@ -212,7 +211,7 @@ licenses:
 ### Apache-2.0
 
 > ```text
-> Copyright 2025 Simon Johnston <johnstonskj@gmail.com>
+> Copyright 2026 Simon Johnston <johnstonskj@gmail.com>
 > 
 > Licensed under the Apache License, Version 2.0 (the "License");
 > you may not use this file except in compliance with the License.
@@ -232,7 +231,7 @@ See the enclosed file [LICENSE-Apache](https://github.com/johnstonskj/zsh-zplugi
 ### MIT
 
 > ```text
-> Copyright 2025 Simon Johnston <johnstonskj@gmail.com>
+> Copyright 2026 Simon Johnston <johnstonskj@gmail.com>
 > 
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the “Software”), to deal
