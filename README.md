@@ -9,9 +9,7 @@ Complete Description...
 
 ## Installation
 
-TBD
 
-### Sheldon
 
 ```bash
 ❱ sheldon add johnstonskj/zsh-zplugin-plugin
@@ -84,6 +82,13 @@ true
 
 Normalize the plugin path from the top-level `${0}` as per the standard
 [Zero Handling](https://wiki.zshell.dev/community/zsh_plugin_standard#zero-handling).
+
+This function will echo the new value and so should be assigned in the following
+manner.
+
+```bash
+0="$(@zplugin_normalize_zero plugin-name)"
+```
 
 **`function @zplugin_declare_global <PINAME> <DIR> [FLAGS]`**
 
@@ -188,6 +193,24 @@ Add `ALIAS` to the global state variable `_ALIASES`.
 
 Remove all aliases listed in the global state variable `_ALIASES`.
 
+### Plugin Custom Paths
+
+**`@zplugin_add_to_path`**
+
+**`@zplugin_remove_from_path`**
+
+**`@zplugin_add_to_fpath`**
+
+**`@zplugin_remove_from_fpath`**
+
+**`@zplugin_register_bin_dir`**
+
+**`@zplugin_unregister_bin_dir`**
+
+**`@zplugin_register_function_dir`**
+
+**`@zplugin_unregister_function_dir`**
+
 ### Plugin Registration
 
 **`@zplugin_register <PINAME>`**
@@ -201,7 +224,6 @@ Remove all aliases listed in the global state variable `_ALIASES`.
 * `ZPLUGINS`; the global state variable for the `zplugin` plugin itself.
 * `ZPLUGINS_USE_AS_MANAGER`; if set *before* the plugin is loaded will force it
   to behave like a plugin manager.
-
 
 ## License(s)
 

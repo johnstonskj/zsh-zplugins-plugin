@@ -51,15 +51,21 @@ foo_plugin_unload() {
 # Plugin Initialization
 ############################################################################
 
-echo "REGISTERED: ${ZPLUGINS[_PLUGINS]}"
-echo "FOO(plugin global): ${(kv)FOO}"
+echo
+echo "before init"
+echo "REGISTERED: $(@zplugins_all_plugin_names)"
+echo "plugin styles: $(@zplugins_plugin_styles foo)"
 
 foo_plugin_init
- 
-echo "FOO(plugin global): ${(kv)FOO}"
-echo "REGISTERED: ${ZPLUGINS[_PLUGINS]}"
- 
+
+echo
+echo "after init, before unload"
+echo "REGISTERED: $(@zplugins_all_plugin_names)"
+echo "plugin styles: $(@zplugins_plugin_styles foo)"
+
 foo_plugin_unload
- 
-echo "FOO(plugin global): ${(kv)FOO}"
-echo "REGISTERED: ${ZPLUGINS[_PLUGINS]}"
+
+echo
+echo "after unload"
+echo "REGISTERED: $(@zplugins_all_plugin_names)"
+echo "plugin styles: $(@zplugins_plugin_styles foo)"
