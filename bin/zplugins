@@ -1,0 +1,50 @@
+#!/usr/bin/env zsh # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
+
+CMD_NAME=${0:t}
+
+usage() {
+    local cmd="${1}"
+
+    echo
+    echo "Usage: ${CMD_NAME} COMMAND OPTIONS"
+    echo
+    echo "Commands:"
+    echo
+    echo "help"
+    echo "list"
+}
+
+cmd_list() {
+    printf '%s' $(@zplugins_all_PLUGIN[_NAME]s)
+}
+
+main() {
+    local cmd=''
+    local args=()
+
+    while [ "$#" -gt 0 ]; do
+        case "${1}" in
+            list)
+                cmd=list
+                ;;
+            -h|--help|help)
+                usage ${cmd}
+                exit 0
+                ;;
+            *)
+                printf 'Error: unknown command/parameter s' "${1}"
+                usage
+                exit 1
+                ;;
+        esac
+        shift 1
+    done
+    if [[ -z "${cmd}" ]]; then
+        printf 'Error: no command specified'
+        usage
+        exit 1
+    fi
+    cmd_${cmd} ${args[*]}
+}
+
+main $*
