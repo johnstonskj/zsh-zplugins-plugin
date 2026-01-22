@@ -1,0 +1,5 @@
+# manager
+
+Plugin manager implementation.
+
+
