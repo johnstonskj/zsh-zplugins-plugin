@@ -1,6 +1,6 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
 #
-# @log
+# @name log
 # @brief Simple logging capability to avoid dependencies.
 #
 
