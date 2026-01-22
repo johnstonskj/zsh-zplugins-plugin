@@ -1,6 +1,6 @@
 # env
 
-Restore the state of the variable `VARNAME` from the global state variable `_OLD_VARNAME`.
+Plugin global variable helpers.
 
 ## Overview
 
@@ -34,12 +34,16 @@ Normalize the value of the `$0` variable as described in
 
 ### @zplugins_envvar_save
 
+Save the state of the variable `VARNAME` in the global state variable `_OLD_VARNAME`.
+
 #### Arguments
 
 * **$1** (string): The plugin's name.
 * **$2** (string): Name of the environment variable to save.
 
 ### @zplugins_envvar_restore
+
+Restore the state of the variable `VARNAME` from the global state variable `_OLD_VARNAME`.
 
 #### Arguments
 

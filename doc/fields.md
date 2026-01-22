@@ -1,6 +1,6 @@
 # fields
 
-Plugin header fields
+Plugin state management functions.
 
 ## Index
 
@@ -39,6 +39,8 @@ Plugin header fields
 * **$1** (string): The plugin's name.
 
 ## headers
+
+Plugin header fields
 
 ```bash
 
