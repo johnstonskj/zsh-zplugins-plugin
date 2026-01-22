@@ -1,9 +1,10 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
+#
+# @name context
+# @brief Plugin context (zstyle) helpers.
+#
 
-############################################################################
-# Plugin Context (zstyle) Helpers
-############################################################################
-
+# @internal
 .zplugins_ctx_get() {
     local style_name="${1}"
     local style_value
@@ -13,6 +14,7 @@
 }
 @zplugins_remember_fn ${PLUGIN[_NAME]} .zplugins_ctx_get
 
+# @internal
 .zplugins_ctx_set() {
     local style_name="${1}"
     local style_value="${2}"
@@ -21,6 +23,7 @@
 }
 @zplugins_remember_fn ${PLUGIN[_NAME]} .zplugins_ctx_set
 
+# @internal
 .zplugins_plugin_ctx_get() {
     local plugin_name="${1}"
     local style_name="${2}"
@@ -30,6 +33,7 @@
 }
 @zplugins_remember_fn ${PLUGIN[_NAME]} .zplugins_plugin_ctx_get
 
+# @internal
 .zplugins_plugin_ctx_set() {
     local plugin_name="${1}"
     local style_name="${2}"
@@ -39,6 +43,10 @@
 }
 @zplugins_remember_fn ${PLUGIN[_NAME]} .zplugins_plugin_ctx_set
 
+#
+# @arg $1 string The plugin's name.
+# @stdout The context path for the named plugin.
+#
 @zplugins_plugin_context() {
     builtin emulate -L zsh
 
@@ -48,6 +56,10 @@
 }
 @zplugins_remember_fn ${PLUGIN[_NAME]} @zplugins_plugin_context
 
+#
+# @arg $1 string The plugin's name.
+# @stdout The complete context data for the named plugin.
+#
 @zplugins_plugin_context_data() {
     builtin emulate -L zsh
 

@@ -28,7 +28,7 @@ foo_plugin_init() {
     builtin emulate -L zsh
 
     # This should be the LAST step.
-    @zplugin_register foo ${PLUGIN[_PATH]}
+    @zplugin_register foo "${PLUGIN[_PATH]}" "bar"
 }
 @zplugins_remember_fn foo foo_plugin_init
 

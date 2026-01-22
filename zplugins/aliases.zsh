@@ -1,9 +1,20 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
+#
+# @name aliases
+# @brief Track plugin-defined aliases.
+#
 
-############################################################################
-# Track Plugin Aliases
-############################################################################
-
+#
+# @description Define the alias (name and value) and add the alias name to
+#   the list tracked for the named plugin to allow it's removal later.
+#
+# @arg $1 string The plugin's name.
+# @arg $2 string The name of the alias.
+# @arg $3 string The value to expand into.
+#
+# @example 
+#    @zplugin_define_alias shdoc shdoc-all 'for file in *.zsh; do shdoc ${file} > ${file:r}.md; done'
+#
 @zplugin_define_alias() {
     builtin emulate -L zsh
 
@@ -24,6 +35,11 @@
 }
 @zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_define_alias
 
+#
+# @description Remove all aliases remembered for the named plugin.
+#
+# @arg $1 string The plugin's name.
+#
 @zplugin_unalias_all() {
     builtin emulate -L zsh
 

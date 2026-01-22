@@ -1,5 +1,10 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
+#
+# @name manager
+# @brief Plugin manager implementation.
+#
 
+# @internal
 .zplugins_manager_init() {
     local as_manager plugin_data plugin_list dir_list dir
 
@@ -22,12 +27,14 @@
 }
 @zplugins_remember_fn ${PLUGIN[_NAME]} .zplugins_manager_init
 
+# @internal
 .zplugins_as_manager() {
     builtin zstyle -t ${ZPLUGINS_CTX} as-manager
     return $?
 }
 @zplugins_remember_fn ${PLUGIN[_NAME]} .zplugins_as_manager
 
+# @internal
 .zplugins_manager_update() {
     local plugin_list
 

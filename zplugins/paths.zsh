@@ -1,11 +1,19 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
+#
+# @name paths
+# @brief Path handing functions.
 
 ############################################################################
-# Plugin Standard Paths
-############################################################################
+# @section standard
+# @description Plugin standard sub-directory paths.
 
-# Register the plugin's `bin` sub-directory, if it exists, as described in
+
+#
+# @description Register the plugin's `bin` sub-directory, if it exists, as described in
 # [binaries-directory](https://wiki.zshell.dev/community/zsh_plugin_standard#binaries-directory)
+#
+# @arg $1 string The plugin's name.
+#
 @zplugin_register_bin_dir() {
     local plugin_name="${1}"
     local bin_dir=$(@zplugins_plugin_bin_dir ${plugin_name})
@@ -18,6 +26,9 @@
 }
 @zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_register_bin_dir
 
+#
+# @arg $1 string The plugin's name.
+#
 @zplugin_unregister_bin_dir() {
     local plugin_name="${1}"
     local bin_dir=$(@zplugins_plugin_bin_dir ${plugin_name})
@@ -30,8 +41,12 @@
 }
 @zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_unregister_bin_dir
 
-# Register the plugin's `functions` sub-directory, if it exists, as described in
-# [functions-directory](https://wiki.zshell.dev/community/zsh_plugin_standard#functions-directory)
+#
+# @description Register the plugin's `function` sub-directory, if it exists, as described in
+# [binaries-directory](https://wiki.zshell.dev/community/zsh_plugin_standard#functions-directory).
+#
+# @arg $1 string The plugin's name.
+#
 @zplugin_register_function_dir() {
     local plugin_name="${1}"
     local function_dir=$(@zplugin_plugin_functions_dir ${plugin_name})
@@ -51,6 +66,9 @@
 }
 @zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_register_function_dir
 
+#
+# @arg $1 string The plugin's name.
+#
 @zplugin_unregister_function_dir() {
     local plugin_name="${1}"
     local function_dir=$(@zplugin_plugin_functions_dir ${plugin_name})
@@ -64,9 +82,13 @@
 @zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_unregister_function_dir
 
 ############################################################################
-# Plugin Custom Paths
-############################################################################
+# @name custom
+# @description Plugin custom paths.
 
+#
+# @arg $1 string The plugin's name.
+# @arg $2 path Directory path to add to `path`
+#
 @zplugin_add_to_path() {
     local plugin_name="${1}"
     local dir="${2}"
@@ -87,6 +109,10 @@
 }
 @zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_add_to_path
 
+#
+# @arg $1 string The plugin's name.
+# @arg $2 path Directory path to remove from `path`
+#
 @zplugin_remove_from_path() {
     local plugin_name="${1}"
     local dir="${2}"
@@ -100,6 +126,10 @@
 }
 @zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_remove_from_path
 
+#
+# @arg $1 string The plugin's name.
+# @arg $2 path Directory path to add to `fpath`
+#
 @zplugin_add_to_fpath() {
     local plugin_name="${1}"
     local dir="${2}"
@@ -120,6 +150,10 @@
 }
 @zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_add_to_fpath
 
+#
+# @arg $1 string The plugin's name.
+# @arg $2 path Directory path to remove from `fpath`
+#
 @zplugin_remove_from_fpath() {
     local plugin_name="${1}"
     local dir="${2}"

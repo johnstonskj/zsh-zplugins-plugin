@@ -1,21 +1,46 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
+#
+# @name registry
+# @brief Plugin registry functions.
+#
 
-
+#
+# @description
+#
+# [Standard Plugins Hash](https://wiki.zshell.dev/community/zsh_plugin_standard#standard-plugins-hash)
+#
+# ### Optional keyword arguments
+# 
+# * `fpath <PATH>`; add PATH to the fpath; no functions are autoloaded from this path.
+# * `path <PATH>`; add PATH to the path.
+# * `save <VARNAME>`; save the content of VARNAME in the `_OLD_VARNAME` variable.
+# 
+# @arg $1 string The plugin's name.
+# @arg $2 path The plugin's main file path.
+#
 @zplugin_register() {
     builtin emulate -L zsh
 
     local plugin_name="${1}"
     local plugin_path="${2}"
+    shift 2
+
+    local -a dependencies
+    if [[ $# > 0 ]]; then
+        dependencies=( ${1} )
+        shift
+    fi
+
     local plugin_dir="${plugin_path:h}"
     local plugin_file="${plugin_path:t}"
     local plugin_list
-    shift 2
 
-    .zplugins_log ${plugin_name} "register plugin 'plugin_name}', in '${plugin_path}'"
+    .zplugins_log ${plugin_name} "register plugin 'plugin_name}', in '${plugin_path}', with dependencies: '${dependencies}'"
 
     if ! @zplugin_is_registered ${plugin_name}; then
         .zplugins_plugin_ctx_set ${plugin_name} plugin-dir "${plugin_dir}"
         .zplugins_plugin_ctx_set ${plugin_name} plugin-file "${plugin_file}"
+        .zplugins_plugin_ctx_set ${plugin_name} dependencies ${dependencies}
 
         .zplugins_log ${plugin_name} "zplugin_register :: add 'bin' sub-directory to path if exists"
         @zplugin_register_bin_dir ${plugin_name}
@@ -52,6 +77,9 @@
 }
 @zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_register
 
+#
+# @arg $1 string The name of a registered plugin.
+#
 @zplugin_unregister() {
     builtin emulate -L zsh
 
@@ -101,6 +129,10 @@
 }
 @zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_unregister
 
+#
+# @noargs
+# @stdout Space-separated list of plugin names *directly* managed by `zplugins`.
+#
 @zplugins_all_plugin_names() {
     builtin emulate -L zsh
 
@@ -108,6 +140,11 @@
 }
 @zplugins_remember_fn ${PLUGIN[_NAME]} @zplugins_all_plugin_names
 
+#
+# @arg $1 string The plugin's name.
+# @exitcode 0 Named plugin is registered.
+# @exitcode 1 Named plugin is **not** registered.
+#
 @zplugin_is_registered() {
     builtin emulate -L zsh
 
