@@ -5,11 +5,15 @@ if ! command -v shdoc 2>&1 >/dev/null; then
     exit 1
 fi
 
+PLUGIN_NAME=zplugins
 INPUT_PATH=${${PWD:-.}:P}
 OUTPUT_PATH=${INPUT_PATH}/doc
+MODULE_PATH={INPUT_PATH}/${PLUGIN_NAME}
 
-shdoc ${INPUT_PATH}/zplugins.plugin.zsh > ${OUTPUT_PATH}/index.md
+shdoc ${INPUT_PATH}/${PLUGIN_NAME}.plugin.zsh > ${OUTPUT_PATH}/index.md
 
-for file in ${INPUT_PATH}/zplugins/*.zsh; do
-    shdoc ${file} > ${OUTPUT_PATH}/${${file:t}:r}.md
-done
+if [[ -d ${MODULE_PATH} ]]; then
+    for file in ${MODULE_PATH}/*.zsh; do
+        shdoc ${file} > ${OUTPUT_PATH}/${${file:t}:r}.md
+    done
+fi
