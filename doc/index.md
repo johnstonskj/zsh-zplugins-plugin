@@ -1,6 +1,6 @@
 # zplugins
 
-Final plugin initialization.
+Zsh plugin to provide standard plugin functionality for plugin development.
 
 ## Overview
 

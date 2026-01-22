@@ -54,9 +54,10 @@
 
 ############################################################################
 # @section headers
-# @brief Plugin header fields
 #
 # @description
+#
+# Plugin header fields
 #
 # ```bash
 # #

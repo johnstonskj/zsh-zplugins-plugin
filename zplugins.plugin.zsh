@@ -52,7 +52,7 @@
 
 ############################################################################
 # @section setup
-# @brief Standard path and variable setup.
+# @description Standard path and variable setup.
 #
 
 # In a plugin use `@zplugins_normalize_zero $"{0}"` to get a normalized path.
@@ -70,7 +70,7 @@ PLUGIN[_MODULE_PATH]="${PLUGIN[_PATH]:h}"
 
 ############################################################################
 # @section logging
-# @brief Source the log sub-module first.
+# @description Source the log sub-module first.
 #
 
 source "${PLUGIN[_MODULE_PATH]}/zplugins/log.zsh"
@@ -79,7 +79,7 @@ source "${PLUGIN[_MODULE_PATH]}/zplugins/log.zsh"
 
 ############################################################################
 # @section modules
-# @brief Load the rest of the modules.
+# @description Load the rest of the modules.
 #
 
 declare -a zplugins_only=( ${ZPLUGINS_ONLY_MODULES} )
@@ -130,7 +130,7 @@ unset zplugins_only
 
 ############################################################################
 # @section lifecycle
-# @brief Plugin lifecycle functions.
+# @description Plugin lifecycle functions.
 #
 
 # @internal
@@ -163,7 +163,7 @@ zplugins_plugin_unload() {
 
 ############################################################################
 # @section initialization
-# @brief Final plugin initialization.
+# @description Final plugin initialization.
 #
 
 zplugins_plugin_init
