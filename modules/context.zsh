@@ -10,7 +10,7 @@ ZPLUGINS[_CTX]=":zplugins"
 ZPLUGINS[_PLUGINS_CTX]="${ZPLUGINS[_CTX]}:plugins"
 ZPLUGINS[_CONTEXT]="${ZPLUGINS[_PLUGINS_CTX]}:zplugins"
 
-############################################################################
+###################################################################################################
 # @name global
 # @description Global context functions.
 
@@ -32,7 +32,7 @@ ZPLUGINS[_CONTEXT]="${ZPLUGINS[_PLUGINS_CTX]}:zplugins"
 }
 @zplugins_remember_fn zplugins .zplugins_ctx_set
 
-############################################################################
+###################################################################################################
 # @name plugin
 # @description Plugin-specific context functions.
 

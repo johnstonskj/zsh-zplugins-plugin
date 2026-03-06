@@ -4,6 +4,12 @@
 # @brief Simple logging capability to avoid dependencies.
 #
 
+###################################################################################################
+# @section private
+# @description
+#
+# Setup and truly private functions. These are not intended to be used by plugins directly###################################################################################################
+
 ZPLUGINS_LOG=${ZPLUGINS_LOG:-1}
 
 # @internal
@@ -49,6 +55,10 @@ ZPLUGINS_LOG=${ZPLUGINS_LOG:-1}
     fi
 }
 # @zplugins_remember_fn zplugins .zplugins_log
+
+###################################################################################################
+# @section public
+# @description Plugin-facing logging functions
 
 # @internal
 .zplugins_log_error() {

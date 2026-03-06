@@ -3,79 +3,21 @@
 # @name fields
 # @brief Plugin state management functions.
 #
-
-#
-# @arg $1 string The plugin's name.
-#
-@zplugins_plugin_dir() {
-    builtin emulate -L zsh
-
-    local plugin_name="${1}"
-
-    printf '%s' "$(.zplugins_plugin_ctx_get "${plugin_name}" plugin-dir)"
-}
-@zplugins_remember_fn zplugins @zplugins_plugin_dir
-
-#
-# @arg $1 string The plugin's name.
-#
-@zplugins_plugin_file() {
-    builtin emulate -L zsh
-
-    local plugin_name="${1}"
-
-    printf '%s' "$(.zplugins_plugin_ctx_get "${plugin_name}" plugin-file)"
-}
-@zplugins_remember_fn zplugins @zplugins_plugin_file
-
-#
-# @arg $1 string The plugin's name.
-# @arg $2 boolean Whether to create the directory if it doesn't exist.
-#
-@zplugins_plugin_functions_dir() {
-    builtin emulate -L zsh
-
-    local plugin_name="${1}"
-    local make_dir="${2:-false}"
-
-    local functions_dir="$(@zplugins_plugin_dir "${plugin_name}")/functions"
-    if [[ "${make_dir}" =~ (#i)(create|true|yes|1) ]] && [[ ! -d "${functions_dir}" ]]; then
-        mkdir -p "${functions_dir}"
-    fi
-    printf '%s' "${functions_dir}"
-}
-@zplugins_remember_fn zplugins @zplugins_plugin_functions_dir
-
-#
-# @arg $1 string The plugin's name.
-#
-@zplugins_plugin_bin_dir() {
-    builtin emulate -L zsh
-
-    local plugin_name="${1}"
-
-    printf '%s/bin' $(@zplugins_plugin_dir ${plugin_name})
-}
-@zplugins_remember_fn zplugins @zplugins_plugin_bin_dir
-
-############################################################################
-# @section headers
-#
 # @description
 #
-# Plugin header fields
+# Plugin header fields are taken from structured comments in the plugin's main file, as shown in
+# the following example.
 #
-# ```bash
-# #
-# # @name PINAME
-# # @description ONE_LINE_DESCRIPTION
-# # @repository URL
-# # @homepage URL
-# # @version SEMVER
-# # @license LICENSE_EXPR
-# #
-# ```
-
+# @example
+#    #
+#    # @name PINAME
+#    # @description ONE_LINE_DESCRIPTION
+#    # @repository URL
+#    # @homepage URL
+#    # @version SEMVER
+#    # @license LICENSE_EXPR
+#    #
+#
 
 # @internal
 .zplugins_plugin_field() {

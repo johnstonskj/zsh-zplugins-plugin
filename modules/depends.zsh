@@ -1,5 +1,13 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
+#
+# @name depends
+# @brief Plugin dependency management.
+#
 
+#
+# @arg $1 string The plugin's name.
+# @arg $2... string The names of the plugins that the named plugin depends on.
+#
 @zplugins_declare_plugin_dependencies() {
     local plugin_name="${1}"
     shift
@@ -9,6 +17,10 @@
 }
 @zplugins_remember_fn zplugins @zplugins_declare_plugin_dependencies
 
+#
+# @arg $1 string The plugin's name.
+# @stdout The names of the plugins that the named plugin depends on.
+#
 @zplugins_plugin_dependencies() {
     local plugin_name="${1}"
 

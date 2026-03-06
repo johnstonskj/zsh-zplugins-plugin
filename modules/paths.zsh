@@ -3,10 +3,39 @@
 # @name paths
 # @brief Path handing functions.
 
-############################################################################
-# @section standard
-# @description Plugin standard sub-directory paths.
+###################################################################################################
+# @section plugin
+# @description Plugin directory and file paths.
 
+#
+# @arg $1 string The plugin's name.
+# @stdout The plugin's directory path.
+#
+@zplugins_plugin_dir() {
+    builtin emulate -L zsh
+
+    local plugin_name="${1}"
+
+    printf '%s' "$(.zplugins_plugin_ctx_get "${plugin_name}" plugin-dir)"
+}
+@zplugins_remember_fn zplugins @zplugins_plugin_dir
+
+#
+# @arg $1 string The plugin's name.
+# @stdout The plugin's main file path.
+#
+@zplugins_plugin_file() {
+    builtin emulate -L zsh
+
+    local plugin_name="${1}"
+
+    printf '%s' "$(.zplugins_plugin_ctx_get "${plugin_name}" plugin-file)"
+}
+@zplugins_remember_fn zplugins @zplugins_plugin_file
+
+###################################################################################################
+# @section bin-dir
+# @description Plugin standard `bin` sub-directory path.
 
 #
 # @description Register the plugin's `bin` sub-directory, if it exists, as described in
@@ -40,6 +69,31 @@
     fi
 }
 @zplugins_remember_fn zplugins @zplugins_unregister_bin_dir
+
+#
+# @arg $1 string The plugin's name.
+# @arg $2 boolean Whether to create the directory if it doesn't exist.
+# @stdout The plugin's `bin` sub-directory path.
+#
+@zplugins_plugin_bin_dir() {
+    builtin emulate -L zsh
+
+    local plugin_name="${1}"
+    local make_dir="${2:-false}"
+
+    local bin_dir="$(@zplugins_plugin_dir "${plugin_name}")/bin"
+    if [[ "${make_dir}" =~ (#i)(create|true|yes) ]] && [[ ! -d "${bin_dir}" ]]; then
+        if ! mkdir -p "${bin_dir}" >/dev/null 2>&1; then
+            log_error 'Failed to create bin directory for plugin "%s".' "${plugin_name}" >&2
+        fi
+    fi
+    printf '%s' "${bin_dir}"
+}
+@zplugins_remember_fn zplugins @zplugins_plugin_bin_dir
+
+###################################################################################################
+# @section function-dir
+# @description Plugin standard `functions` sub-directory path.
 
 #
 # @description Register the plugin's `function` sub-directory, if it exists, as described in
@@ -94,8 +148,29 @@
 }
 @zplugins_remember_fn zplugins @zplugins_unregister_function_dir
 
-############################################################################
-# @name custom
+#
+# @arg $1 string The plugin's name.
+# @arg $2 boolean Whether to create the directory if it doesn't exist.
+# @stdout The plugin's `functions` sub-directory path.
+#
+@zplugins_plugin_functions_dir() {
+    builtin emulate -L zsh
+
+    local plugin_name="${1}"
+    local make_dir="${2:-false}"
+
+    local functions_dir="$(@zplugins_plugin_dir "${plugin_name}")/functions"
+    if [[ "${make_dir}" =~ (#i)(create|true|yes) ]] && [[ ! -d "${functions_dir}" ]]; then
+        if ! mkdir -p "${functions_dir}" >/dev/null 2>&1; then
+            log_error 'Failed to create functions directory for plugin "%s".' "${plugin_name}" >&2
+        fi
+    fi
+    printf '%s' "${functions_dir}"
+}
+@zplugins_remember_fn zplugins @zplugins_plugin_functions_dir
+
+###################################################################################################
+# @section custom
 # @description Plugin custom paths.
 
 #

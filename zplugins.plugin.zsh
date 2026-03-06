@@ -43,19 +43,18 @@
 #
 # ### Modules
 #
-# * [aliases](aliases.md)
-# * [context](context.md)
-# * [env](env.md)
-# * [fields](fields.md)
-# * [functions](functions.md)
-# * [load](load.md)
-# * [log](log.md)
-# * [manager](manager.md)
-# * [paths](paths.md)
-# * [registry](registry.md)
+# * [aliases](./modules/aliases.md)
+# * [context](./modules/context.md)
+# * [env](./modules/env.md)
+# * [fields](./modules/fields.md)
+# * [functions](./modules/functions.md)
+# * [load](./modules/load.md)
+# * [log](./modules/log.md)
+# * [manager](./modules/manager.md)
+# * [paths](./modules/paths.md)
 #
 
-############################################################################
+###################################################################################################
 # @section setup
 # @description Standard path and variable setup.
 #
@@ -70,10 +69,10 @@ ZPLUGINS[_MODULE_PATH]="${ZPLUGINS[_PATH]:h}/modules"
 
 typeset -ga zplugins=()
 typeset -g ZPLUGINS_ONLY_MODULES=${ZPLUGINS_ONLY_MODULES:-}
-typeset -g ZPLUGINS_PLUGIN_HOME=${ZPLUGINS_PLUGIN_HOME:-${XDG_DATA_HOME:-${HOME}/.local/share}/zplugins}
+typeset -g ZPLUGINS_PLUGIN_HOME=${ZPLUGINS_PLUGIN_HOME:-${XDG_DATA_HOME:-${HOME}/.local/share}/plugins}
 typeset -g ZPLUGINS_USE_AS_MANAGER=${ZPLUGINS_USE_AS_MANAGER:-no}
 
-############################################################################
+###################################################################################################
 # @section logging
 # @description Source the log sub-module first.
 #
@@ -82,7 +81,7 @@ source "${ZPLUGINS[_MODULE_PATH]}/log.zsh"
 
 .zplugins_log_trace zplugins "plugin globals $(.zplugins_logfmt_assoc_array ZPLUGINS)"
 
-############################################################################
+###################################################################################################
 # @section modules
 # @description Load the rest of the modules.
 #
@@ -133,7 +132,7 @@ fi
 
 unset zplugins_only
 
-############################################################################
+###################################################################################################
 # @section lifecycle
 # @description Plugin lifecycle functions.
 #
