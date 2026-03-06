@@ -21,7 +21,7 @@ Normalize the value of the `$0` variable as described in
 #### Example
 
 ```bash
-0="$(@zplugin_normalize_zero "${0}")"
+0="$(@zplugins_normalize_zero "${0}")"
 ```
 
 #### Arguments

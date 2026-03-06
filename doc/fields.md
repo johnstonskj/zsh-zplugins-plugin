@@ -6,13 +6,13 @@ Plugin state management functions.
 
 * [@zplugins_plugin_dir](#zpluginsplugindir)
 * [@zplugins_plugin_file](#zpluginspluginfile)
-* [@zplugin_plugin_functions_dir](#zpluginpluginfunctionsdir)
+* [@zplugins_plugin_functions_dir](#zpluginpluginfunctionsdir)
 * [@zplugins_plugin_bin_dir](#zpluginspluginbindir)
-* [@zplugin_short_description](#zpluginshortdescription)
+* [@zplugins_short_description](#zpluginshortdescription)
 * [@zplugins_plugin_repository](#zpluginspluginrepository)
 * [@zplugins_plugin_homepage](#zpluginspluginhomepage)
 * [@zplugins_plugin_version](#zpluginspluginversion)
-* [@zplugin_license](#zpluginlicense)
+* [@zplugins_license](#zpluginlicense)
 
 ### @zplugins_plugin_dir
 
@@ -26,7 +26,7 @@ Plugin state management functions.
 
 * **$1** (string): The plugin's name.
 
-### @zplugin_plugin_functions_dir
+### @zplugins_plugin_functions_dir
 
 #### Arguments
 
@@ -53,7 +53,7 @@ Plugin header fields
 
 ```
 
-### @zplugin_short_description
+### @zplugins_short_description
 
 #### Arguments
 
@@ -93,7 +93,7 @@ Plugin header fields
 
 * The value of the `Version` header field.
 
-### @zplugin_license
+### @zplugins_license
 
 #### Arguments
 

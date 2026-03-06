@@ -12,9 +12,9 @@
 
     local plugin_name="${1}"
 
-    $(.zplugins_plugin_ctx_get plugin-dir)
+    printf '%s' "$(.zplugins_plugin_ctx_get "${plugin_name}" plugin-dir)"
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugins_plugin_dir
+@zplugins_remember_fn zplugins @zplugins_plugin_dir
 
 #
 # @arg $1 string The plugin's name.
@@ -24,21 +24,21 @@
 
     local plugin_name="${1}"
 
-    $(.zplugins_plugin_ctx_get plugin-file)
+    printf '%s' "$(.zplugins_plugin_ctx_get "${plugin_name}" plugin-file)"
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugins_plugin_file
+@zplugins_remember_fn zplugins @zplugins_plugin_file
 
 #
 # @arg $1 string The plugin's name.
 #
-@zplugin_plugin_functions_dir() {
+@zplugins_plugin_functions_dir() {
     builtin emulate -L zsh
 
     local plugin_name="${1}"
 
-    printf '%s/functions' $(.zplugins_plugin_ctx_get plugin-dir)
+    printf '%s/functions' "$(@zplugins_plugin_dir "${plugin_name}")"
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_plugin_functions_dir
+@zplugins_remember_fn zplugins @zplugins_plugin_functions_dir
 
 #
 # @arg $1 string The plugin's name.
@@ -48,9 +48,9 @@
 
     local plugin_name="${1}"
 
-    printf '%s/bin' $(.zplugins_plugin_ctx_get plugin-dir)
+    printf '%s/bin' $(@zplugins_plugin_dir ${plugin_name})
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugins_plugin_bin_dir
+@zplugins_remember_fn zplugins @zplugins_plugin_bin_dir
 
 ############################################################################
 # @section headers
@@ -86,18 +86,18 @@
         printf ''
     fi
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} .zplugins_plugin_field
+@zplugins_remember_fn zplugins .zplugins_plugin_field
 
 #
 # @arg $1 string The plugin's name.
 # @stdout The value of the `@brief` header field.
 #
-@zplugin_short_description() {
+@zplugins_short_description() {
     builtin emulate -L zsh
 
     .zplugins_plugin_field "${1}" brief
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_plugin_short_description
+@zplugins_remember_fn zplugins @zplugins_plugin_short_description
 
 #
 # @arg $1 string The plugin's name.
@@ -108,7 +108,7 @@
 
     .zplugins_plugin_field "${1}" repository
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugins_plugin_repository
+@zplugins_remember_fn zplugins @zplugins_plugin_repository
 
 #
 # @arg $1 string The plugin's name.
@@ -119,7 +119,7 @@
 
     .zplugins_plugin_field "${1}" homepage
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugins_plugin_homepage
+@zplugins_remember_fn zplugins @zplugins_plugin_homepage
 
 #
 # @arg $1 string The plugin's name.
@@ -130,15 +130,15 @@
 
     .zplugins_plugin_field "${1}" version
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugins_plugin_version
+@zplugins_remember_fn zplugins @zplugins_plugin_version
 
 #
 # @arg $1 string The plugin's name.
 # @stdout The value of the `License` header field.
 #
-@zplugin_license() {
+@zplugins_license() {
     builtin emulate -L zsh
 
     .zplugins_plugin_field "${1}" license
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugins_plugin_license
+@zplugins_remember_fn zplugins @zplugins_plugin_license

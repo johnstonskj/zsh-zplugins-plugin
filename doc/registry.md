@@ -14,12 +14,12 @@ Plugin registry functions.
 
 ## Index
 
-* [@zplugin_register](#zpluginregister)
-* [@zplugin_unregister](#zpluginunregister)
+* [@zplugins_register](#zpluginregister)
+* [@zplugins_unregister](#zpluginunregister)
 * [@zplugins_all_plugin_names](#zpluginsallpluginnames)
-* [@zplugin_is_registered](#zpluginisregistered)
+* [@zplugins_is_registered](#zpluginisregistered)
 
-### @zplugin_register
+### @zplugins_register
 
 [Standard Plugins Hash](https://wiki.zshell.dev/community/zsh_plugin_standard#standard-plugins-hash)
 
@@ -34,7 +34,7 @@ Plugin registry functions.
 * **$1** (string): The plugin's name.
 * **$2** (path): The plugin's main file path.
 
-### @zplugin_unregister
+### @zplugins_unregister
 
 #### Arguments
 
@@ -48,7 +48,7 @@ _Function has no arguments._
 
 * Space-separated list of plugin names *directly* managed by `zplugins`.
 
-### @zplugin_is_registered
+### @zplugins_is_registered
 
 #### Arguments
 

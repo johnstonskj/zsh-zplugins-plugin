@@ -28,9 +28,9 @@ TBD
 
 ## Plugin Setup
 
-0="$(@zplugin_normalize_zero "$0")"
+0="$(@zplugins_normalize_zero "$0")"
 
-@zplugin_declare_global foo "$0" aliases functions bin_dir function_dir 
+@zplugins_declare_global foo "$0" aliases functions bin_dir function_dir 
 
 ## Plugin Lifecycle
 
@@ -38,19 +38,19 @@ foo_plugin_init() {
     builtin emulate -L zsh
 
     # This should be the LAST step.
-    @zplugin_register foo
+    @zplugins_register foo
 }
-@zplugin_remember_fn foo foo_plugin_init
+@zplugins_remember_fn foo foo_plugin_init
 
 foo_plugin_unload() {
     builtin emulate -L zsh
 
     # This should be the FIRST step.
-    @zplugin_unregister foo
+    @zplugins_unregister foo
 
     unfunction foo_plugin_unload
 }
-@zplugin_remember_fn foo foo_plugin_unload
+@zplugins_remember_fn foo foo_plugin_unload
 
 ## Plugin Public Things
 

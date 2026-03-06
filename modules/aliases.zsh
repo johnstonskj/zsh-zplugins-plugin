@@ -13,43 +13,50 @@
 # @arg $3 string The value to expand into.
 #
 # @example 
-#    @zplugin_define_alias shdoc shdoc-all 'for file in *.zsh; do shdoc ${file} > ${file:r}.md; done'
+#    @zplugins_define_alias shdoc shdoc-all 'for file in *.zsh; do shdoc ${file} > ${file:r}.md; done'
 #
-@zplugin_define_alias() {
+@zplugins_define_alias() {
     builtin emulate -L zsh
 
     local plugin_name="${1}"
-    local alias_name="${2}"
-    local alias_value="${3}"
-    local alias_list
+    local alias_flag alias_name alias_value alias_list
+    if [[ "${2}" =~ -[gs] ]]; then
+        alias_flag="${2} "
+        alias_name="${3}"
+        alias_value="${4}"
+    else
+        alias_flag=''
+        alias_name="${2}"
+        alias_value="${3}"
+    fi
 
-    builtin zstyle -a ${ZPLUGINS_PLUGINS_CTX}:${plugin_name} aliases alias_list
-    .zplugins_log_trace ${} "adding '${alias_name}' to plugin aliases list (${alias_list})"
+    builtin zstyle -a $(@zplugins_plugin_context ${plugin_name}) aliases alias_list
+    .zplugins_log_trace ${} "adding '${alias_name}' (with flag: '${alias_flag}') to plugin aliases list (${alias_list})"
 
     if [[ ${alias_list[(i)${fn_name}]} -gt ${#alias_list} ]]; then
         alias_list+=( $alias_name )
         .zplugins_plugin_ctx_set ${plugin_name} aliases ${alias_list}
     fi
 
-    alias ${alias_name}=${alias_value}
+    alias ${alias_flag}${alias_name}=${alias_value}
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_define_alias
+@zplugins_remember_fn zplugins @zplugins_define_alias
 
 #
 # @description Remove all aliases remembered for the named plugin.
 #
 # @arg $1 string The plugin's name.
 #
-@zplugin_unalias_all() {
+@zplugins_unalias_all() {
     builtin emulate -L zsh
 
     local plugin_name="${1}"
     local alias_list alias_name
-    builtin zstyle -a ${ZPLUGINS_PLUGINS_CTX}:${plugin_name} aliases alias_list
+    builtin zstyle -a $(@zplugins_plugin_context ${plugin_name}) aliases alias_list
 
     for alias_name in ${alias_list[@]}; do
         .zplugins_log_trace ${plugin_name} "unalias '${alias_name}'"
         unalias ${alias_name}
     done
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_unalias_all
+@zplugins_remember_fn zplugins @zplugins_unalias_all

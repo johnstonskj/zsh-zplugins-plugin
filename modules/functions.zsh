@@ -18,17 +18,24 @@
     local fn_name="${2}"
     local fn_list
 
+    # Zsh global
+    typeset -A _comps
+
     # Calls to zstyle directly so that no module dependencies exist
 
-    builtin zstyle -a ${ZPLUGINS_PLUGINS_CTX}:${plugin_name} functions fn_list
-    .zplugins_log_debug ${plugin_name} "adding '${fn_name}' to plugin functions list: (${fn_list})"
+    builtin zstyle -a ${ZPLUGINS[_PLUGINS_CTX]}:${plugin_name} functions fn_list
 
     if [[ ${fn_list[(i)${fn_name}]} -gt ${#fn_list} ]]; then
         fn_list+=( $fn_name )
-        builtin zstyle ${ZPLUGINS_PLUGINS_CTX}:${plugin_name} functions ${fn_list}
+        builtin zstyle ${ZPLUGINS[_PLUGINS_CTX]}:${plugin_name} functions ${fn_list}
+
+        if [[ "${fn_name}" == _* && -z "${_comps[${fn_name:2}]}" ]]; then
+            .zplugins_log_trace ${plugin_name} "function appears to be a completion for command '${fn_name:2}', adding to '_comps'"
+            _comps[${fn_name:2}]=${fn_name}
+        fi
     fi
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugins_remember_fn
+@zplugins_remember_fn zplugins @zplugins_remember_fn
 
 #
 # @description Remove all functions remembered for the named plugin.
@@ -40,11 +47,11 @@
 
     local plugin_name="${1}"
     local fn_list fn_name
-    builtin zstyle -a ${ZPLUGINS_PLUGINS_CTX}:${plugin_name} functions fn_list
+    builtin zstyle -a ${ZPLUGINS[_PLUGINS_CTX]}:${plugin_name} functions fn_list
 
     for fn_name in ${fn_list[@]}; do
         .zplugins_log_trace ${plugin_name} "unfunction '${fn_name}'"
         whence -f "${fn_name}" &> /dev/null && unfunction ${fn_name}
     done
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugins_unfunction_all
+@zplugins_remember_fn zplugins @zplugins_unfunction_all

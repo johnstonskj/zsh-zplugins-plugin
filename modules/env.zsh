@@ -12,7 +12,7 @@
 # @stdout The normalized path value.
 #
 # @example
-#    0="$(@zplugin_normalize_zero "${0}")"
+#    0="$(@zplugins_normalize_zero "${0}")"
 #
 @zplugins_normalize_zero() {
     builtin emulate -L zsh
@@ -22,7 +22,7 @@
     zero="${ZERO:-${${zero:#${ZSH_ARGZERO}}:-${(%):-%N}}}"
     printf '%s' "${${(M)zero:#/*}:-${PWD}/${zero}}"
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugins_normalize_zero
+@zplugins_remember_fn zplugins @zplugins_normalize_zero
 
 #
 # @description Save the state of the variable `VARNAME` in the global state variable `_OLD_VARNAME`.
@@ -38,7 +38,7 @@
 
     .zplugins_plugin_ctx_set ${plugin_name} old-${env_var} "${(P)env_var}"
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugins_envvar_save
+@zplugins_remember_fn zplugins @zplugins_envvar_save
 
 #
 # @description Restore the state of the variable `VARNAME` from the global state variable `_OLD_VARNAME`.
@@ -57,4 +57,4 @@
 
     : ${(P)env_var::=${env_value}}
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugins_envvar_restore
+@zplugins_remember_fn zplugins @zplugins_envvar_restore

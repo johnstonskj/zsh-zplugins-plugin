@@ -15,7 +15,7 @@ usage() {
 }
 
 cmd_list() {
-    printf '%s' $(@zplugins_all_PLUGIN[_NAME]s)
+    printf '%s' $(@zplugins_all_plugin_names)
 }
 
 main() {
@@ -32,7 +32,7 @@ main() {
                 exit 0
                 ;;
             *)
-                printf 'Error: unknown command/parameter s' "${1}"
+                printf 'Error: unknown command/parameter s' "${1}" >&2
                 usage
                 exit 1
                 ;;
@@ -40,7 +40,7 @@ main() {
         shift 1
     done
     if [[ -z "${cmd}" ]]; then
-        printf 'Error: no command specified'
+        printf 'Error: no command specified' >&2
         usage
         exit 1
     fi

@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
 
 if ! command -v shdoc 2>&1 >/dev/null; then
-    echo "shdoc not installed, go to https://github.com/reconquest/shdoc"
+    echo "Error: shdoc not installed, go to https://github.com/reconquest/shdoc" >&2
     exit 1
 fi
 

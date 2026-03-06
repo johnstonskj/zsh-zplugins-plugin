@@ -14,32 +14,32 @@
 #
 # @arg $1 string The plugin's name.
 #
-@zplugin_register_bin_dir() {
+@zplugins_register_bin_dir() {
     local plugin_name="${1}"
     local bin_dir=$(@zplugins_plugin_bin_dir ${plugin_name})
 
-    if [[ -d "${bin_dir}" && ${path[(i)${bin_dir}]} -gt ${#path} ]]; then
-        .zplugins_log_debug ${plugin_name} "adding standard 'bin' sub-directory to path"
+    if [[ -d "${bin_dir}" ]]; then
+        .zplugins_log_trace ${plugin_name} "adding standard 'bin' sub-directory to path"
         path+=( "${bin_dir}" )
         export PATH
     fi
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_register_bin_dir
+@zplugins_remember_fn zplugins @zplugins_register_bin_dir
 
 #
 # @arg $1 string The plugin's name.
 #
-@zplugin_unregister_bin_dir() {
+@zplugins_unregister_bin_dir() {
     local plugin_name="${1}"
     local bin_dir=$(@zplugins_plugin_bin_dir ${plugin_name})
 
     if [[ -d "${bin_dir}" && ${path[(i)${bin_dir}]} -le ${#path} ]]; then
-        .zplugins_log_debug ${plugin_name} "removing standard 'bin' sub-directory from path"
+        .zplugins_log_trace ${plugin_name} "removing standard 'bin' sub-directory from path"
         path=( "${(@)path:#${bin_dir}}" )
         export PATH
     fi
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_unregister_bin_dir
+@zplugins_remember_fn zplugins @zplugins_unregister_bin_dir
 
 #
 # @description Register the plugin's `function` sub-directory, if it exists, as described in
@@ -47,39 +47,52 @@
 #
 # @arg $1 string The plugin's name.
 #
-@zplugin_register_function_dir() {
+@zplugins_register_function_dir() {
     local plugin_name="${1}"
-    local function_dir=$(@zplugin_plugin_functions_dir ${plugin_name})
+    local function_dir="$(@zplugins_plugin_functions_dir "${plugin_name}")"
 
-    if [[ -d "${function_dir}" && ${fpath[(i)${function_dir}]} -gt ${#fpath} ]]; then
-        .zplugins_log_debug ${plugin_name} "adding standard 'functions' sub-directory to function path"
+    .zplugins_log_trace ${plugin_name} "register function dir: ${function_dir}"
+
+    if [[ -d "${function_dir}" ]]; then
+        if [[ ${fpath[(i)${function_dir}]} -le ${#fpath} ]]; then
+            .zplugins_log_warning ${plugin_name} "'functions' sub-directory already added? adding again"
+        fi
+        .zplugins_log_trace ${plugin_name} "adding standard 'functions' sub-directory to function path"
         fpath+=( "${function_dir}" )
         export FPATH
 
         # Autoload functions from the functions directory.
-        for fn_name in ${function_dir}/*(N.:t); do
-            .zplugins_log_debug ${plugin_name} "load function '${fn_name}' from the standard 'functions' sub-directory"
+        for fn_name in ${function_dir}/*(DN.:t); do
+            .zplugins_log_trace ${plugin_name} "load function '${fn_name}' from the standard 'functions' sub-directory"
             autoload -Uz ${fn_name}
             @zplugins_remember_fn ${plugin_name} ${fn_name}
         done
     fi
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_register_function_dir
+@zplugins_remember_fn zplugins @zplugins_register_function_dir
 
 #
 # @arg $1 string The plugin's name.
 #
-@zplugin_unregister_function_dir() {
+@zplugins_unregister_function_dir() {
     local plugin_name="${1}"
-    local function_dir=$(@zplugin_plugin_functions_dir ${plugin_name})
+    local function_dir=$(@zplugins_plugin_functions_dir ${plugin_name})
 
-    if [[ -d "${function_dir}" && ${fpath[(i)${function_dir}]} -le ${#fpath} ]]; then
-        .zplugins_log_debug ${plugin_name} "removing standard 'functions' sub-directory from function path"
-        fpath=( "${(@)fpath:#${function_dir}}" )
-        export FPATH
+    if [[ -d "${function_dir}" ]]; then
+        for fn_name in ${function_dir}/*(DN.:t); do
+            .zplugins_log_trace ${plugin_name} "unfunction function '${fn_name}'"
+            whence -f "${fn_name}" &> /dev/null && unfunction ${fn_name}
+        done
+        builtin zstyle -d $(@zplugins_plugin_context ${plugin_name}) functions
+
+        if [[ ${fpath[(i)${function_dir}]} -le ${#fpath} ]]; then
+            .zplugins_log_trace ${plugin_name} "removing standard 'functions' sub-directory from function path"
+            fpath=( "${(@)fpath:#${function_dir}}" )
+            export FPATH
+        fi
     fi
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_unregister_function_dir
+@zplugins_remember_fn zplugins @zplugins_unregister_function_dir
 
 ############################################################################
 # @name custom
@@ -89,80 +102,80 @@
 # @arg $1 string The plugin's name.
 # @arg $2 path Directory path to add to `path`
 #
-@zplugin_add_to_path() {
+@zplugins_add_to_path() {
     local plugin_name="${1}"
     local dir="${2}"
     local create_if_not_exists="${2}"
 
     if [[ -n "${dir}" && ${path[(i)${dir}]} -gt ${#path} ]]; then
         if [[ ${create_if_not_exists} == yes && ! -d "${dir}" ]]; then
-            .zplugins_log_debug ${plugin_name} "creating non-existing '${dir}'"
+            .zplugins_log_trace ${plugin_name} "creating non-existing '${dir}'"
             if ! mkdir -p "${dir}" ; then
                 .zplugins_log_warning ${plugin_name} "could not create directory, error $?"
             fi
         fi
-        .zplugins_log_debug ${plugin_name} "adding '${dir}' to plugin path ($(@zplugins_plugin_ctx_get ${plugin_name} path))"
+        .zplugins_log_trace ${plugin_name} "adding '${dir}' to plugin path ($(.zplugins_plugin_ctx_get ${plugin_name} path))"
         path+=( "${dir}" )
         .zplugins_plugin_ctx_set ${plugin_name} path ${path}
         export PATH
     fi
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_add_to_path
+@zplugins_remember_fn zplugins @zplugins_add_to_path
 
 #
 # @arg $1 string The plugin's name.
 # @arg $2 path Directory path to remove from `path`
 #
-@zplugin_remove_from_path() {
+@zplugins_remove_from_path() {
     local plugin_name="${1}"
     local dir="${2}"
 
     if [[ ${path[(i)${dir}]} -le ${#path} ]]; then
-        .zplugins_log_debug ${plugin_name} "removing '${dir}' from plugin path ($(@zplugins_plugin_ctx_get ${plugin_name} path))"
+        .zplugins_log_trace ${plugin_name} "removing '${dir}' from plugin path ($(.zplugins_plugin_ctx_get ${plugin_name} path))"
         path=( "${(@)path:#${dir}}" )
         .zplugins_plugin_ctx_set ${plugin_name} path ${path}
         export PATH
     fi
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_remove_from_path
+@zplugins_remember_fn zplugins @zplugins_remove_from_path
 
 #
 # @arg $1 string The plugin's name.
 # @arg $2 path Directory path to add to `fpath`
 #
-@zplugin_add_to_fpath() {
+@zplugins_add_to_fpath() {
     local plugin_name="${1}"
     local dir="${2}"
     local create_if_not_exists="${2}"
 
     if [[ -n "${dir}" && "${fpath[(i)${dir}]}" > "${#fpath}" ]]; then
         if [[ ${create_if_not_exists} == yes && ! -d "${dir}" ]]; then
-            .zplugins_log_debug ${plugin_name} "creating non-existing '${dir}'"
+            .zplugins_log_trace ${plugin_name} "creating non-existing '${dir}'"
             if ! mkdir -p "${dir}" ; then
                 .zplugins_log_warning ${plugin_name} "could not create directory, error $?"
             fi
         fi
-        .zplugins_log_debug ${plugin_name} "adding '${dir}' to plugin function path ($(@zplugins_plugin_ctx_get ${plugin_name} fpath))"
+        .zplugins_log_trace ${plugin_name} "adding '${dir}' to plugin function path ($(.zplugins_plugin_ctx_get ${plugin_name} fpath))"
         fpath+=( "${dir}" )
         .zplugins_plugin_ctx_set ${plugin_name} fpath ${fpath}
         export FPATH
     fi
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_add_to_fpath
+@zplugins_remember_fn zplugins @zplugins_add_to_fpath
 
 #
 # @arg $1 string The plugin's name.
 # @arg $2 path Directory path to remove from `fpath`
 #
-@zplugin_remove_from_fpath() {
+@zplugins_remove_from_fpath() {
     local plugin_name="${1}"
     local dir="${2}"
 
     if [[ ${fpath[(i)${dir}]} -le ${#pfath} ]]; then
-        .zplugins_log_debug ${plugin_name} "removing '${dir}' from plugin function path ($(@zplugins_plugin_ctx_get ${plugin_name} fpath))"
+        .zplugins_log_trace ${plugin_name} "removing '${dir}' from plugin function path ($(.zplugins_plugin_ctx_get ${plugin_name} fpath))"
         fpath=( "${(@)path:#${dir}}" )
         .zplugins_plugin_ctx_set ${plugin_name} fpath ${fpath}
         export FPATH
     fi
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugin_remove_from_fpath
+@zplugins_remember_fn zplugins @zplugins_remove_from_fpath

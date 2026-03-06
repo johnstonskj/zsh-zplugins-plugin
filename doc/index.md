@@ -27,8 +27,13 @@ system.
 
 ### Variables
 
+* **zplugins**: An array of strings of the form `name[=path]|` where plugin names are
+required, however the path may be left empty **if** the plugin conforms to naming
+conventions and exists in the directory `ZPLUGINS_PLUGIN_HOME`.
 * **ZPLUGINS_ONLY_MODULES**: A space-speparated list of module names to be loaded instead
 of the default (all). For advanced usage only.
+* **ZPLUGINS_PLUGIN_HOME**: A path to a directory to act as the root for plugin sources
+without explicit paths.
 * **ZPLUGINS_USE_AS_MANAGER**: If set to `yes`, `true`, or `1` the plugin
 will act as a limited plugin manager.
 

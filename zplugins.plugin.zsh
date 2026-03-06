@@ -31,8 +31,13 @@
 #
 # ### Variables
 #
+# * **zplugins**: An array of strings of the form `name[=path]|` where plugin names are
+#     required, however the path may be left empty **if** the plugin conforms to naming
+#     conventions and exists in the directory `ZPLUGINS_PLUGIN_HOME`.
 # * **ZPLUGINS_ONLY_MODULES**: A space-speparated list of module names to be loaded instead
 #     of the default (all). For advanced usage only.
+# * **ZPLUGINS_PLUGIN_HOME**: A path to a directory to act as the root for plugin sources
+#     without explicit paths.
 # * **ZPLUGINS_USE_AS_MANAGER**: If set to `yes`, `true`, or `1` the plugin
 #     will act as a limited plugin manager.
 #
@@ -59,23 +64,23 @@
 0="${ZERO:-${${0:#${ZSH_ARGZERO}}:-${(%):-%N}}}"
 0="${${(M)0:#/*}:-${PWD}/$0}"
 
-ZPLUGINS_CTX=":zplugins"
-ZPLUGINS_PLUGINS_CTX="${ZPLUGINS_CTX}:plugins"
+typeset -gA ZPLUGINS
+ZPLUGINS[_PATH]="${0}"
+ZPLUGINS[_MODULE_PATH]="${ZPLUGINS[_PATH]:h}/modules"
 
-typeset -A PLUGIN
-PLUGIN[_PATH]="${0}"
-PLUGIN[_NAME]="${${PLUGIN[_PATH]:t}%%.*}"
-PLUGIN[_CONTEXT]="${ZPLUGINS_PLUGINS_CTX}:${PLUGIN[_NAME]}"
-PLUGIN[_MODULE_PATH]="${PLUGIN[_PATH]:h}"
+typeset -ga zplugins=()
+typeset -g ZPLUGINS_ONLY_MODULES=${ZPLUGINS_ONLY_MODULES:-}
+typeset -g ZPLUGINS_PLUGIN_HOME=${ZPLUGINS_PLUGIN_HOME:-${XDG_DATA_HOME:-${HOME}/.local/share}/zplugins}
+typeset -g ZPLUGINS_USE_AS_MANAGER=${ZPLUGINS_USE_AS_MANAGER:-no}
 
 ############################################################################
 # @section logging
 # @description Source the log sub-module first.
 #
 
-source "${PLUGIN[_MODULE_PATH]}/zplugins/log.zsh"
+source "${ZPLUGINS[_MODULE_PATH]}/log.zsh"
 
-.zplugins_log_trace '' "plugin globals $(.zplugins_logfmt_assoc_array PLUGIN)"
+.zplugins_log_trace zplugins "plugin globals $(.zplugins_logfmt_assoc_array ZPLUGINS)"
 
 ############################################################################
 # @section modules
@@ -85,45 +90,45 @@ source "${PLUGIN[_MODULE_PATH]}/zplugins/log.zsh"
 declare -a zplugins_only=( ${ZPLUGINS_ONLY_MODULES} )
 
 if [[ ${#zplugins_only} -gt 0 ]]; then
-    .zplugins_log_trace '' "loading only ( ${zplugins_only[*]} ) modules"
+    .zplugins_log_trace zplugins "loading only ( ${zplugins_only[*]} ) modules"
 fi
 
 if [[ ${#zplugins_only} -eq 0 || ${zplugin_sonly[(ie)functions]} -le ${#zplugins_only} ]]; then
-    source "${PLUGIN[_MODULE_PATH]}/zplugins/functions.zsh"
+    source "${ZPLUGINS[_MODULE_PATH]}/functions.zsh"
 fi
 
 if [[ ${#zplugins_only} -eq 0 || ${zplugin_sonly[(ie)aliases]} -le ${#zplugins_only} ]]; then
-    source "${PLUGIN[_MODULE_PATH]}/zplugins/aliases.zsh"
+    source "${ZPLUGINS[_MODULE_PATH]}/aliases.zsh"
 
 fi
 
 if [[ ${#zplugins_only} -eq 0 || ${zplugin_sonly[(ie)context]} -le ${#zplugins_only} ]]; then
-    source "${PLUGIN[_MODULE_PATH]}/zplugins/context.zsh"
+    source "${ZPLUGINS[_MODULE_PATH]}/context.zsh"
 
 fi
 
 if [[ ${#zplugins_only} -eq 0 || ${zplugin_sonly[(ie)env]} -le ${#zplugins_only} ]]; then
-    source "${PLUGIN[_MODULE_PATH]}/zplugins/env.zsh"
+    source "${ZPLUGINS[_MODULE_PATH]}/env.zsh"
 
 fi
 
 if [[ ${#zplugins_only} -eq 0 || ${zplugin_sonly[(ie)fields]} -le ${#zplugins_only} ]]; then
-    source "${PLUGIN[_MODULE_PATH]}/zplugins/fields.zsh"
+    source "${ZPLUGINS[_MODULE_PATH]}/fields.zsh"
 
 fi
 
+if [[ ${#zplugins_only} -eq 0 || ${zplugin_sonly[(ie)load]} -le ${#zplugins_only} ]]; then
+    source "${ZPLUGINS[_MODULE_PATH]}/load.zsh"
+fi
+
 if [[ ${#zplugins_only} -eq 0 || ${zplugin_sonly[(ie)manager]} -le ${#zplugins_only} ]]; then
-    source "${PLUGIN[_MODULE_PATH]}/zplugins/manager.zsh"
+    source "${ZPLUGINS[_MODULE_PATH]}/manager.zsh"
 
 fi
 
 if [[ ${#zplugins_only} -eq 0 || ${zplugin_sonly[(ie)paths]} -le ${#zplugins_only} ]]; then
-    source "${PLUGIN[_MODULE_PATH]}/zplugins/paths.zsh"
+    source "${ZPLUGINS[_MODULE_PATH]}/paths.zsh"
 
-fi
-
-if [[ ${#zplugins_only} -eq 0 || ${zplugin_sonly[(ie)registry]} -le ${#zplugins_only} ]]; then
-    source "${PLUGIN[_MODULE_PATH]}/zplugins/registry.zsh"
 fi
 
 unset zplugins_only
@@ -138,35 +143,12 @@ zplugins_plugin_init() {
     builtin emulate -L zsh
 
     .zplugins_manager_init
-
-    # Finally, register the plugin.
-    @zplugin_register ${PLUGIN[_NAME]} "${PLUGIN[_PATH]}"
 }
-@zplugins_remember_fn ${PLUGIN[_NAME]} @zplugins_plugin_init
 
 # @internal
 zplugins_plugin_unload() {
     builtin emulate -L zsh
 
-    .zplugins_log_debug ${PLUGIN[_NAME]} 'remove from registered plugins first'
-    @zplugins_unregister ${PLUGIN[_NAME]}
-
-    .zplugins_log_debug ${PLUGIN[_NAME]} 'remove all remembered functions and aliases'
-    @zplugins_unfunction_all ${PLUGIN[_NAME]}
-    @zplugin_unalias_all ${PLUGIN[_NAME]}
-
-    .zplugins_log_debug ${PLUGIN[_NAME]} 'remove the plugins global state variable'
+    .zplugins_log_debug zplugins "remove the plugin's global state variable"
     unset ZPLUGINS
-
-    unfunction zplugins_plugin_unload
 }
-
-############################################################################
-# @section initialization
-# @description Final plugin initialization.
-#
-
-zplugins_plugin_init
-.zplugins_log_trace ${PLUGIN[_NAME]} 'initialization complete'
-
-true
