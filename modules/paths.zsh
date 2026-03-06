@@ -81,10 +81,10 @@
     builtin emulate -L zsh
 
     local plugin_name="${1}"
-    local make_dir="${2:-false}"
+    local create_if_not_exists="${2:-no}"
 
     local bin_dir="$(@zplugins_plugin_dir "${plugin_name}")/bin"
-    if [[ "${make_dir}" =~ (#i)(create|true|yes) ]] && [[ ! -d "${bin_dir}" ]]; then
+    if [[ "${create_if_not_exists:l}" =~ (create|true|yes) && ! -d "${bin_dir}" ]]; then
         if ! mkdir -p "${bin_dir}" >/dev/null 2>&1; then
             log_error 'Failed to create bin directory for plugin "%s".' "${plugin_name}" >&2
         fi
@@ -161,10 +161,10 @@
     builtin emulate -L zsh
 
     local plugin_name="${1}"
-    local make_dir="${2:-false}"
+    local create_if_not_exists="${2:-no}"
 
     local functions_dir="$(@zplugins_plugin_dir "${plugin_name}")/functions"
-    if [[ "${make_dir}" =~ (#i)(create|true|yes) ]] && [[ ! -d "${functions_dir}" ]]; then
+    if [[ "${create_if_not_exists:l}" =~ (create|true|yes) && ! -d "${functions_dir}" ]]; then
         if ! mkdir -p "${functions_dir}" >/dev/null 2>&1; then
             log_error 'Failed to create functions directory for plugin "%s".' "${plugin_name}" >&2
         fi
@@ -178,11 +178,11 @@
 # @description Plugin custom paths.
 
 #
-# @description 
+# @description
 #
 # Add a directory to a plugin-managed path variable. This **only** adds the
-# directory once, any subsequent calls to add the same directory will be no-ops. If the directory 
-# is added, the plugin's context for the path variable will be updated to reflect the change. 
+# directory once, any subsequent calls to add the same directory will be no-ops. If the directory
+# is added, the plugin's context for the path variable will be updated to reflect the change.
 #
 # If the directory doesn't exist, the third parameter can be used to specify that it should be
 # created.
@@ -197,7 +197,7 @@
     local create_if_not_exists="${3:-no}"
 
     if [[ -n "${dir}" && ${path[(i)${dir}]} -gt ${#path} ]]; then
-        if [[ ${create_if_not_exists} =~ (#i)(create|true|yes) ]] && [[ ! -d "${dir}" ]]; then
+        if [[ ${create_if_not_exists:l} =~ (create|true|yes) && ! -d "${dir}" ]]; then
             .zplugins_log_trace ${plugin_name} "creating non-existing '${dir}'"
             if ! mkdir -p "${dir}" ; then
                 .zplugins_log_warning ${plugin_name} "could not create directory, error $?"
@@ -266,7 +266,7 @@
     local create_if_not_exists="${3}"
 
     if [[ -n "${dir}" && "${fpath[(i)${dir}]}" > "${#fpath}" ]]; then
-        if [[ ${create_if_not_exists} =~ (#i)(create|true|yes) ]] && [[ ! -d "${dir}" ]]; then
+        if [[ ${create_if_not_exists:l} =~ (create|true|yes) && ! -d "${dir}" ]]; then
             .zplugins_log_trace ${plugin_name} "creating non-existing '${dir}'"
             if ! mkdir -p "${dir}" ; then
                 .zplugins_log_warning ${plugin_name} "could not create directory, error $?"
