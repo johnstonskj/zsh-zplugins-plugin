@@ -30,13 +30,19 @@
 
 #
 # @arg $1 string The plugin's name.
+# @arg $2 boolean Whether to create the directory if it doesn't exist.
 #
 @zplugins_plugin_functions_dir() {
     builtin emulate -L zsh
 
     local plugin_name="${1}"
+    local make_dir="${2:-false}"
 
-    printf '%s/functions' "$(@zplugins_plugin_dir "${plugin_name}")"
+    local functions_dir="$(@zplugins_plugin_dir "${plugin_name}")/functions"
+    if [[ "${make_dir}" =~ (#i)(create|true|yes|1) ]] && [[ ! -d "${functions_dir}" ]]; then
+        mkdir -p "${functions_dir}"
+    fi
+    printf '%s' "${functions_dir}"
 }
 @zplugins_remember_fn zplugins @zplugins_plugin_functions_dir
 
