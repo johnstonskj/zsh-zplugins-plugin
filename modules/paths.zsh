@@ -38,7 +38,9 @@
 # @description Plugin standard `bin` sub-directory path.
 
 #
-# @description Register the plugin's `bin` sub-directory, if it exists, as described in
+# @description
+#
+# Register the plugin's `bin` sub-directory, if it exists, as described in
 # [binaries-directory](https://wiki.zshell.dev/community/zsh_plugin_standard#binaries-directory)
 #
 # @arg $1 string The plugin's name.
@@ -96,7 +98,9 @@
 # @description Plugin standard `functions` sub-directory path.
 
 #
-# @description Register the plugin's `function` sub-directory, if it exists, as described in
+# @description 
+#
+# Register the plugin's `function` sub-directory, if it exists, as described in
 # [binaries-directory](https://wiki.zshell.dev/community/zsh_plugin_standard#functions-directory).
 #
 # @arg $1 string The plugin's name.
@@ -174,16 +178,26 @@
 # @description Plugin custom paths.
 
 #
+# @description 
+#
+# Add a directory to a plugin-managed path variable. This **only** adds the
+# directory once, any subsequent calls to add the same directory will be no-ops. If the directory 
+# is added, the plugin's context for the path variable will be updated to reflect the change. 
+#
+# If the directory doesn't exist, the third parameter can be used to specify that it should be
+# created.
+#
 # @arg $1 string The plugin's name.
 # @arg $2 path Directory path to add to `path`
+# @arg $3 boolean Whether to create the directory if it doesn't exist.
 #
 @zplugins_add_to_path() {
     local plugin_name="${1}"
     local dir="${2}"
-    local create_if_not_exists="${2}"
+    local create_if_not_exists="${3:-no}"
 
     if [[ -n "${dir}" && ${path[(i)${dir}]} -gt ${#path} ]]; then
-        if [[ ${create_if_not_exists} == yes && ! -d "${dir}" ]]; then
+        if [[ ${create_if_not_exists} =~ (#i)(create|true|yes) ]] && [[ ! -d "${dir}" ]]; then
             .zplugins_log_trace ${plugin_name} "creating non-existing '${dir}'"
             if ! mkdir -p "${dir}" ; then
                 .zplugins_log_warning ${plugin_name} "could not create directory, error $?"
@@ -196,6 +210,24 @@
     fi
 }
 @zplugins_remember_fn zplugins @zplugins_add_to_path
+
+#
+# @arg $1 string The plugin's name.
+# @arg $2 path Directory path to add to `path`
+# @arg $3 boolean Whether to create the directory if it doesn't exist.
+#
+@zplugins_add_to_path_if_exists() {
+    local plugin_name="${1}"
+    local dir="${2}"
+    local create_if_not_exists="${3:-no}"
+
+    if [[ -d "${dir}" ]]; then
+        @zplugins_add_to_path "${plugin_name}" "${dir}" "${create_if_not_exists}"
+    else
+        .zplugins_log_trace "${plugin_name}" "directory '${dir}' does not exist, skipping add to plugin path"
+    fi
+}
+@zplugins_remember_fn zplugins @zplugins_add_to_path_if_exists
 
 #
 # @arg $1 string The plugin's name.
@@ -215,16 +247,26 @@
 @zplugins_remember_fn zplugins @zplugins_remove_from_path
 
 #
+# @description 
+#
+# Add a directory to a plugin-managed function path variable. This **only** adds the
+# directory once, any subsequent calls to add the same directory will be no-ops. If the directory 
+# is added, the plugin's context for the path variable will be updated to reflect the change. 
+#
+# If the directory doesn't exist, the third parameter can be used to specify that it should be
+# created.
+#
 # @arg $1 string The plugin's name.
 # @arg $2 path Directory path to add to `fpath`
+# @arg $3 boolean Whether to create the directory if it doesn't exist.
 #
 @zplugins_add_to_fpath() {
     local plugin_name="${1}"
     local dir="${2}"
-    local create_if_not_exists="${2}"
+    local create_if_not_exists="${3}"
 
     if [[ -n "${dir}" && "${fpath[(i)${dir}]}" > "${#fpath}" ]]; then
-        if [[ ${create_if_not_exists} == yes && ! -d "${dir}" ]]; then
+        if [[ ${create_if_not_exists} =~ (#i)(create|true|yes) ]] && [[ ! -d "${dir}" ]]; then
             .zplugins_log_trace ${plugin_name} "creating non-existing '${dir}'"
             if ! mkdir -p "${dir}" ; then
                 .zplugins_log_warning ${plugin_name} "could not create directory, error $?"
@@ -237,6 +279,24 @@
     fi
 }
 @zplugins_remember_fn zplugins @zplugins_add_to_fpath
+
+#
+# @arg $1 string The plugin's name.
+# @arg $2 path Directory path to add to `fpath`
+# @arg $3 boolean Whether to create the directory if it doesn't exist.
+#
+@zplugins_add_to_fpath_if_exists() {
+    local plugin_name="${1}"
+    local dir="${2}"
+    local create_if_not_exists="${3:-no}"
+
+    if [[ -d "${dir}" ]]; then
+        @zplugins_add_to_fpath "${plugin_name}" "${dir}" "${create_if_not_exists}"
+    else
+        .zplugins_log_trace "${plugin_name}" "directory '${dir}' does not exist, skipping add to plugin function path"
+    fi
+}
+@zplugins_remember_fn zplugins @zplugins_add_to_fpath_if_exists
 
 #
 # @arg $1 string The plugin's name.
