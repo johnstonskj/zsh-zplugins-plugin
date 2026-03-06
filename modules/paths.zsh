@@ -50,7 +50,6 @@
     local bin_dir=$(@zplugins_plugin_bin_dir ${plugin_name})
 
     if [[ -d "${bin_dir}" ]]; then
-        .zplugins_log_trace ${plugin_name} "adding standard 'bin' sub-directory to path"
         path+=( "${bin_dir}" )
         export PATH
     fi
@@ -65,7 +64,6 @@
     local bin_dir=$(@zplugins_plugin_bin_dir ${plugin_name})
 
     if [[ -d "${bin_dir}" && ${path[(i)${bin_dir}]} -le ${#path} ]]; then
-        .zplugins_log_trace ${plugin_name} "removing standard 'bin' sub-directory from path"
         path=( "${(@)path:#${bin_dir}}" )
         export PATH
     fi
@@ -98,7 +96,7 @@
 # @description Plugin standard `functions` sub-directory path.
 
 #
-# @description 
+# @description
 #
 # Register the plugin's `function` sub-directory, if it exists, as described in
 # [binaries-directory](https://wiki.zshell.dev/community/zsh_plugin_standard#functions-directory).
@@ -109,19 +107,15 @@
     local plugin_name="${1}"
     local function_dir="$(@zplugins_plugin_functions_dir "${plugin_name}")"
 
-    .zplugins_log_trace ${plugin_name} "register function dir: ${function_dir}"
-
     if [[ -d "${function_dir}" ]]; then
         if [[ ${fpath[(i)${function_dir}]} -le ${#fpath} ]]; then
             .zplugins_log_warning ${plugin_name} "'functions' sub-directory already added? adding again"
         fi
-        .zplugins_log_trace ${plugin_name} "adding standard 'functions' sub-directory to function path"
         fpath+=( "${function_dir}" )
         export FPATH
 
         # Autoload functions from the functions directory.
         for fn_name in ${function_dir}/*(DN.:t); do
-            .zplugins_log_trace ${plugin_name} "load function '${fn_name}' from the standard 'functions' sub-directory"
             autoload -Uz ${fn_name}
             @zplugins_remember_fn ${plugin_name} ${fn_name}
         done
@@ -138,13 +132,11 @@
 
     if [[ -d "${function_dir}" ]]; then
         for fn_name in ${function_dir}/*(DN.:t); do
-            .zplugins_log_trace ${plugin_name} "unfunction function '${fn_name}'"
             whence -f "${fn_name}" &> /dev/null && unfunction ${fn_name}
         done
         builtin zstyle -d $(@zplugins_plugin_context ${plugin_name}) functions
 
         if [[ ${fpath[(i)${function_dir}]} -le ${#fpath} ]]; then
-            .zplugins_log_trace ${plugin_name} "removing standard 'functions' sub-directory from function path"
             fpath=( "${(@)fpath:#${function_dir}}" )
             export FPATH
         fi
@@ -198,12 +190,10 @@
 
     if [[ -n "${dir}" && ${path[(i)${dir}]} -gt ${#path} ]]; then
         if [[ ${create_if_not_exists:l} =~ (create|true|yes) && ! -d "${dir}" ]]; then
-            .zplugins_log_trace ${plugin_name} "creating non-existing '${dir}'"
             if ! mkdir -p "${dir}" ; then
                 .zplugins_log_warning ${plugin_name} "could not create directory, error $?"
             fi
         fi
-        .zplugins_log_trace ${plugin_name} "adding '${dir}' to plugin path ($(.zplugins_plugin_ctx_get ${plugin_name} path))"
         path+=( "${dir}" )
         .zplugins_plugin_ctx_set ${plugin_name} path ${path}
         export PATH
@@ -223,8 +213,6 @@
 
     if [[ -d "${dir}" ]]; then
         @zplugins_add_to_path "${plugin_name}" "${dir}" "${create_if_not_exists}"
-    else
-        .zplugins_log_trace "${plugin_name}" "directory '${dir}' does not exist, skipping add to plugin path"
     fi
 }
 @zplugins_remember_fn zplugins @zplugins_add_to_path_if_exists
@@ -238,7 +226,6 @@
     local dir="${2}"
 
     if [[ ${path[(i)${dir}]} -le ${#path} ]]; then
-        .zplugins_log_trace ${plugin_name} "removing '${dir}' from plugin path ($(.zplugins_plugin_ctx_get ${plugin_name} path))"
         path=( "${(@)path:#${dir}}" )
         .zplugins_plugin_ctx_set ${plugin_name} path ${path}
         export PATH
@@ -247,11 +234,11 @@
 @zplugins_remember_fn zplugins @zplugins_remove_from_path
 
 #
-# @description 
+# @description
 #
 # Add a directory to a plugin-managed function path variable. This **only** adds the
-# directory once, any subsequent calls to add the same directory will be no-ops. If the directory 
-# is added, the plugin's context for the path variable will be updated to reflect the change. 
+# directory once, any subsequent calls to add the same directory will be no-ops. If the directory
+# is added, the plugin's context for the path variable will be updated to reflect the change.
 #
 # If the directory doesn't exist, the third parameter can be used to specify that it should be
 # created.
@@ -267,12 +254,10 @@
 
     if [[ -n "${dir}" && "${fpath[(i)${dir}]}" > "${#fpath}" ]]; then
         if [[ ${create_if_not_exists:l} =~ (create|true|yes) && ! -d "${dir}" ]]; then
-            .zplugins_log_trace ${plugin_name} "creating non-existing '${dir}'"
             if ! mkdir -p "${dir}" ; then
                 .zplugins_log_warning ${plugin_name} "could not create directory, error $?"
             fi
         fi
-        .zplugins_log_trace ${plugin_name} "adding '${dir}' to plugin function path ($(.zplugins_plugin_ctx_get ${plugin_name} fpath))"
         fpath+=( "${dir}" )
         .zplugins_plugin_ctx_set ${plugin_name} fpath ${fpath}
         export FPATH
@@ -292,8 +277,6 @@
 
     if [[ -d "${dir}" ]]; then
         @zplugins_add_to_fpath "${plugin_name}" "${dir}" "${create_if_not_exists}"
-    else
-        .zplugins_log_trace "${plugin_name}" "directory '${dir}' does not exist, skipping add to plugin function path"
     fi
 }
 @zplugins_remember_fn zplugins @zplugins_add_to_fpath_if_exists
@@ -307,7 +290,6 @@
     local dir="${2}"
 
     if [[ ${fpath[(i)${dir}]} -le ${#pfath} ]]; then
-        .zplugins_log_trace ${plugin_name} "removing '${dir}' from plugin function path ($(.zplugins_plugin_ctx_get ${plugin_name} fpath))"
         fpath=( "${(@)path:#${dir}}" )
         .zplugins_plugin_ctx_set ${plugin_name} fpath ${fpath}
         export FPATH

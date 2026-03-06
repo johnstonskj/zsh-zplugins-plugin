@@ -18,21 +18,21 @@
     .zplugins_log_info zplugins "loading all plugins managed by sheldon"
 
     if ! command -v sheldon >/dev/null 2>&1 ; then
-        echo "Error: sheldon command not found!" >&2
+        .zplugins_log_error "${plugin_name}" "sheldon command not found!"
     else
-        local sourced 
+        local sourced
         local -a sourced_paths
         local line
         local -a plugin_paths
 
         sourced="$(sheldon source)"
         sourced_paths=( "${(@f)sourced}" )
-        
+
         for line in ${sourced_paths[@]}; do
             line=$(echo ${line} | cut -d' ' -f2)
             plugin_paths+=( "=${line:1:-1}" )
         done
-        
+
         .zplugins_load_all_inner "${plugin_paths[*]}"
     fi
 }
@@ -45,16 +45,15 @@
 #
 @zplugins_load_all() {
     .zplugins_log_info zplugins "loading all plugins from global array 'zplugins': ${zplugins[*]}"
+
     local -a plugin_list
     local plugin_name plugin_path
 
     for plugin_name in ${zplugins[@]}; do
         plugin_path=$(.zplugins_find_load_path ${plugin_name})
         if [[ $? -eq 0 ]]; then
-            .zplugins_log_trace zplugins "plugin '${plugin_name}' found in '${plugin_path}'"
             plugin_list+=( "${plugin_name}=${plugin_path}" )
         else
-            echo "Error: could not find path for plugin named '${plugin_name}'" >&2
             .zplugins_log_error ${plugin_name} "could not find path for plugin named '${plugin_name}'"
         fi
     done
@@ -77,7 +76,6 @@
     if [[ -f "${plugin_path}" && -n "${plugin_name}" ]]; then
         : # We have everything we think we need
     elif [[ -f "${plugin_path}" && -z "${plugin_name}" ]]; then
-        .zplugins_log_trace "${plugin_name}" "deconstruct dir and name from path"
         plugin_file=${plugin_path:t}
         extension="${plugin_file#*.}"
         if [[ "${extension}" =~ ^(plugin\\.)?zsh$ ]]; then
@@ -86,7 +84,6 @@
             plugin_name="${plugin_file}"
         fi
     elif [[ -d "${plugin_path}" && -n "${plugin_name}" ]]; then
-        .zplugins_log_trace "${plugin_name}" "construct path from dir and name"
         plugin_dir="${plugin_path}"
         plugin_file="${plugin_name}.plugin.zsh"
         path_parts=( ${plugin_path} ${plugin_file} )
@@ -98,7 +95,6 @@
     fi
 
     if [[ -f "${plugin_path}" ]]; then
-        .zplugins_log_trace "${plugin_name}" "sourcing file at ${plugin_path}"
         source "${plugin_path}"
 
         if ! @zplugins_is_loaded ${plugin_name}; then
@@ -127,7 +123,7 @@
     local plugin_name="${1}"
     local plugin_data plugin_list dir_list dir
 
-    .zplugins_log_trace zplugins "unload plugin '${plugin_name}'"
+    .zplugins_log_info zplugins "unloading plugin '${plugin_name}'"
 
     plugin_data=$(@zplugins_plugin_context_data ${plugin_name})
 
@@ -136,36 +132,29 @@
     elif [[ -n "${plugin_data}" ]]; then
         .zplugins_manager_update
 
-        .zplugins_log_trace "${plugin_name}" 'remove all remembered functions'
         @zplugins_unfunction_all ${plugin_name}
-        
-        .zplugins_log_trace "${plugin_name}" 'remove all remembered aliases'
+
         @zplugins_unalias_all ${plugin_name}
 
-        .zplugins_log_trace "${plugin_name}" 'remove bin directory from path if it exists'
         @zplugins_unregister_bin_dir ${plugin_name}
 
-        .zplugins_log_trace "${plugin_name}" 'remove custom directories from path'
         builtin zstyle -a ${ZPLUGINS[_PLUGINS_CTX]}:${plugin_name} path dir_list
         for dir in ${dir_list[@]}; do
             @zplugins_remove_from_path ${plugin_name} "${dir}"
         done
 
-        .zplugins_log_trace "${plugin_name}" 'remove functions directory from fpath if it exists'
         @zplugins_unregister_function_dir ${plugin_name}
 
-        .zplugins_log_trace "${plugin_name}" 'remove custom directories from fpath'
         builtin zstyle -a ${ZPLUGINS[_PLUGINS_CTX]}${plugin_name} fpath dir_list
         for dir in ${dir_list[@]}; do
             @zplugins_remove_from_fpath "${dir}"
         done
 
-        .zplugins_log_trace "${plugin_name}" 'remove the plugin zstyle context, do this last'
         builtin zstyle -d ${ZPLUGINS[_PLUGINS_CTX]}:${plugin_name}
 
-        .zplugins_log_trace zplugins"plugin unloaded"
+        .zplugins_log_info zplugins"plugin unloaded"
     else
-        .zplugins_log_debug zplugins "no context for plugin '${plugin_name}', cannot unload"
+        .zplugins_log_warning zplugins "no context for plugin '${plugin_name}', cannot unload"
     fi
 }
 @zplugins_remember_fn zplugins @zplugins_unload
@@ -180,7 +169,6 @@
 
     local plugin_name="${1}"
 
-    .zplugins_log_trace zplugins "is plugin '${plugin_name}' in ( ${zsh_loaded_plugins[*]} )?"
     if [[ " ${zsh_loaded_plugins[*]} " == *" ${plugin_name} "* ]]; then
         return 0
     else
@@ -213,7 +201,7 @@
 
     try_dirs=( "zsh-${plugin_name}-plugin" "zsh-${plugin_name}" "${plugin_name}.zsh" )
     try_files=( "${plugin_name}.plugin.zsh" )
-            
+
     for try_dir in ${try_dirs[@]}; do
         for try_file in ${try_files[@]}; do
             try_path="${ZPLUGINS_PLUGIN_HOME}/${try_dir}/${try_file}"
@@ -232,13 +220,9 @@
     local -a plugin_list=( ${(@s: :)1} )
     local entry parts load_path
 
-    .zplugins_log_info zplugins "load plugins from ( ${plugin_list[@]} )"
-
     for entry in "${plugin_list[@]}"; do
         parts=( ${(@s:=:)entry} )
 
-        .zplugins_log_trace zplugins "split path: '${parts[1]}' = '${parts[2]}'"
-        
         if [[ ${#parts} -eq 2 ]]; then
             @zplugins_plugin_load ${parts[2]} ${parts[1]}
         elif [[ ${#parts} -eq 1 && ${entry::1} == '=' ]]; then
@@ -249,13 +233,11 @@
             if [ $? -eq 0 ]; then
                 @zplugins_plugin_load "${load_path}" ${parts[1]}
             else
-                echo "Error: cannot find a plugin location for '${parts[1]}'" >&2
                 .zplugins_log_error zplugins "cannot find a plugin location for '${parts[1]}'"
             fi
         else
-            echo "Error: badly formed load string '${entry}'" >&2
             .zplugins_log_error zplugins "badly formed load string '${entry}'"
-        fi 
+        fi
     done
 }
 @zplugins_remember_fn zplugins .zplugins_load_all_inner
@@ -266,11 +248,8 @@
 
     local plugin_name="${1}"
     local plugin_path="${2}"
-
     local plugin_dir="${plugin_path:h}"
     local plugin_file="${plugin_path:t}"
-
-    .zplugins_log_trace zplugins "setting up plugin '${plugin_name}', in '${plugin_path}', with dependencies: '$(.zplugins_logfmt_array dependencies)'"
 
     if ! @zplugins_is_loaded ${plugin_name}; then
         .zplugins_plugin_ctx_set ${plugin_name} plugin-dir "${plugin_dir}"
@@ -290,7 +269,7 @@
                 fi
 
                 if @zplugins_is_loaded ${dependency} && ! optional; then
-                    .zplugins_log_trace "${plugin_name}" "dependency '${dependency}' satisfied"
+                    : # happy path
                 elif optional; then
                     .plugins_log_warning "${plugin_name}" "optional dependency '${dependency}' NOT satisfied"
                 else
@@ -299,26 +278,20 @@
             done
         fi
 
-        .zplugins_log_trace "${plugin_name}" "add 'bin' sub-directory to path, if it exists"
         @zplugins_register_bin_dir ${plugin_name}
 
-        .zplugins_log_trace "${plugin_name}" "add 'functions' sub-directory to fpath, if it exists"
         @zplugins_register_function_dir ${plugin_name}
 
-        .zplugins_log_trace "${plugin_name}" "remember _plugin_unload"
         if whence -f ${plugin_name}_plugin_unload &> /dev/null; then
             @zplugins_remember_fn "${plugin_name}" ${plugin_name}_plugin_unload
         fi
 
         .zplugins_manager_update
 
-        .zplugins_log_trace "${plugin_name}" "call/remember _plugin_init"
         if whence -f ${plugin_name}_plugin_init &> /dev/null; then
             @zplugins_remember_fn "${plugin_name}" ${plugin_name}_plugin_init
             ${plugin_name}_plugin_init "${plugin_path}" "${plugin_name}"
         fi
-
-        .zplugins_log_trace zplugins "plugin '${plugin_name}' setup complete"
     else
         .zplugins_log_warning zplugins "plugin '${plugin_name}' already registered, cannot re-register"
     fi

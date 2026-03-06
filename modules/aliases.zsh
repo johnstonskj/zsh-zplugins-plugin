@@ -31,7 +31,6 @@
     fi
 
     builtin zstyle -a $(@zplugins_plugin_context ${plugin_name}) aliases alias_list
-    .zplugins_log_trace ${} "adding '${alias_name}' (with flag: '${alias_flag}') to plugin aliases list (${alias_list})"
 
     if [[ ${alias_list[(i)${fn_name}]} -gt ${#alias_list} ]]; then
         alias_list+=( $alias_name )
@@ -55,7 +54,6 @@
     builtin zstyle -a $(@zplugins_plugin_context ${plugin_name}) aliases alias_list
 
     for alias_name in ${alias_list[@]}; do
-        .zplugins_log_trace ${plugin_name} "unalias '${alias_name}'"
         unalias ${alias_name}
     done
 }

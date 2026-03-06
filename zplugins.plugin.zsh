@@ -88,10 +88,6 @@ source "${ZPLUGINS[_MODULE_PATH]}/log.zsh"
 
 declare -a zplugins_only=( ${ZPLUGINS_ONLY_MODULES} )
 
-if [[ ${#zplugins_only} -gt 0 ]]; then
-    .zplugins_log_trace zplugins "loading only ( ${zplugins_only[*]} ) modules"
-fi
-
 if [[ ${#zplugins_only} -eq 0 || ${zplugin_sonly[(ie)functions]} -le ${#zplugins_only} ]]; then
     source "${ZPLUGINS[_MODULE_PATH]}/functions.zsh"
 fi
@@ -148,6 +144,5 @@ zplugins_plugin_init() {
 zplugins_plugin_unload() {
     builtin emulate -L zsh
 
-    .zplugins_log_debug zplugins "remove the plugin's global state variable"
     unset ZPLUGINS
 }

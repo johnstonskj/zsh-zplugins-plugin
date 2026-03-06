@@ -22,7 +22,6 @@
     typeset -A _comps
 
     # Calls to zstyle directly so that no module dependencies exist
-
     builtin zstyle -a ${ZPLUGINS[_PLUGINS_CTX]}:${plugin_name} functions fn_list
 
     if [[ ${fn_list[(i)${fn_name}]} -gt ${#fn_list} ]]; then
@@ -30,7 +29,7 @@
         builtin zstyle ${ZPLUGINS[_PLUGINS_CTX]}:${plugin_name} functions ${fn_list}
 
         if [[ "${fn_name}" == _* && -z "${_comps[${fn_name:2}]}" ]]; then
-            .zplugins_log_trace ${plugin_name} "function appears to be a completion for command '${fn_name:2}', adding to '_comps'"
+            .zplugins_log_info ${plugin_name} "function appears to be a completion for command '${fn_name:2}', adding to '_comps'"
             _comps[${fn_name:2}]=${fn_name}
         fi
     fi
@@ -50,8 +49,9 @@
     builtin zstyle -a ${ZPLUGINS[_PLUGINS_CTX]}:${plugin_name} functions fn_list
 
     for fn_name in ${fn_list[@]}; do
-        .zplugins_log_trace ${plugin_name} "unfunction '${fn_name}'"
-        whence -f "${fn_name}" &> /dev/null && unfunction ${fn_name}
+        if whence -f "${fn_name}" /dev/null 2>&1; then
+            unfunction ${fn_name}
+        fi
     done
 }
 @zplugins_remember_fn zplugins @zplugins_unfunction_all
