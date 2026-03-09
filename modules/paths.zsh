@@ -8,8 +8,8 @@
 # @description Plugin directory and file paths.
 
 #
-# @arg $1 string The plugin's name.
-# @stdout The plugin's directory path.
+# @arg $1 string The plugin's directory.
+# @stdout The plugin's fully qualified directory path.
 #
 @zplugins_plugin_dir() {
     builtin emulate -L zsh
@@ -21,8 +21,8 @@
 @zplugins_remember_fn zplugins @zplugins_plugin_dir
 
 #
-# @arg $1 string The plugin's name.
-# @stdout The plugin's main file path.
+# @arg $1 string The plugin's file name.
+# @stdout The plugin's main file name.
 #
 @zplugins_plugin_file() {
     builtin emulate -L zsh

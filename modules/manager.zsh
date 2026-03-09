@@ -8,7 +8,7 @@
 .zplugins_manager_init() {
     local as_manager plugin_data plugin_list dir_list dir
 
-    if [[ "${ZPLUGINS_USE_AS_MANAGER}" =~ (([yY][eE][sS])|([tT][rR][uU][eE])|1) ]]; then
+    if [[ "${ZPLUGINS_USE_AS_MANAGER}" =~ (#i)(true|yes|1) ]]; then
         .zplugins_ctx_set as-manager yes
         as_manager=0
     else

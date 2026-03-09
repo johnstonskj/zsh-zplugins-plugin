@@ -24,12 +24,12 @@
     builtin emulate -L zsh
 
     local plugin_name="${1}"
-    local plugin_path="$(@zplugins_plugin_dir ${plugin_name})/$(@zplugins_plugin_file ${plugin_name})/"
+    local plugin_path="$(@zplugins_plugin_dir ${plugin_name})/$(@zplugins_plugin_file ${plugin_name})"
     local field_name="${2}"
 
-    local field_value=$(grep -m 1 -E "^#[ \\t]+@${field_name}" "${plugin_path}" | cut -d':' -f2-)
-    if $?; then
-        printf '%s' "${field_value//^[[:space:]]+|[[:space:]]+$//}"
+    local value=$(grep -m 1 -E "^#[ \\t]+@${field_name}" "${plugin_path}" | cut -d':' -f2-)
+    if [[ $? -eq 0 ]]; then
+        printf '%s' "${${value%${value##*[^[:blank:]]}}#${${value%${value##*[^[:blank:]]}}%%[^[:blank:]]*}}"
     else
         printf ''
     fi

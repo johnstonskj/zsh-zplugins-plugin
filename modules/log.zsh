@@ -51,7 +51,7 @@ ZPLUGINS_LOG=${ZPLUGINS_LOG:-1}
             caller=" $(basename ${caller}) ❱"
         fi
 
-        echo "$(gdate -Ins) ❱ ${context} ❱${caller} $*"
+        printf '%s\n' "$(gdate -Ins) ❱ ${context} ❱${caller} $*"
     fi
 }
 # @zplugins_remember_fn zplugins .zplugins_log

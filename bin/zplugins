@@ -15,7 +15,25 @@ usage() {
 }
 
 cmd_list() {
-    printf '%s' $(@zplugins_all_plugin_names)
+
+    @zplugins_loaded_plugin_names
+
+    local name_str="$(@zplugins_loaded_plugin_names)"
+    local -a names=( "${(z)name_str}" )
+
+    for name in ${(o)names[@]}; do
+        local brief="$(@zplugins_short_description ${name})"
+        if [[ -n "${brief}" ]]; then
+            brief=": ${brief}"
+        fi
+
+        local version="$(@zplugins_plugin_version ${name})"
+        if [[ -n "${version}" ]]; then
+            version=" (${version})"
+        fi
+
+        printf '%s%s%s\n' ${name} ${brief} ${version}
+    done
 }
 
 main() {

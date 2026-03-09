@@ -38,6 +38,28 @@
 }
 @zplugins_remember_fn zplugins @zplugins_load_all_from_sheldon
 
+@zplugins_load_bootstrap_plugins() {
+    .zplugins_log_info zplugins "loading plugins required to bootstrap .zshenv"
+
+    local -a plugins=( xdg shlog paths )
+    local plugin_name plugin_path
+    local -a plugin_list
+
+    for plugin_name in ${plugins[@]}; do
+        if ! @zplugins_is_loaded ${plugin}; then
+            plugin_path=$(.zplugins_find_load_path ${plugin_name})
+            if [[ $? -eq 0 ]]; then
+                plugin_list+=( "${plugin_name}=${plugin_path}" )
+            else
+                .zplugins_log_error ${plugin_name} "could not find path for plugin named '${plugin_name}'"
+            fi
+        fi
+    done
+
+    .zplugins_load_all_inner "${plugin_list[*]}"
+}
+@zplugins_remember_fn zplugins @zplugins_load_bootstrap_plugins
+
 #
 # @description
 #
@@ -46,8 +68,8 @@
 @zplugins_load_all() {
     .zplugins_log_info zplugins "loading all plugins from global array 'zplugins': ${zplugins[*]}"
 
-    local -a plugin_list
     local plugin_name plugin_path
+    local -a plugin_list
 
     for plugin_name in ${zplugins[@]}; do
         plugin_path=$(.zplugins_find_load_path ${plugin_name})
@@ -89,7 +111,6 @@
         path_parts=( ${plugin_path} ${plugin_file} )
         plugin_path="${(j:/:)path_parts}"
     else
-        echo "Error: call with either <DIR> <NAME> or <FILE>" >&2
         .zplugins_log_error "${plugin_name}" "call with either <DIR> <NAME> or <FILE>"
         return 1
     fi
@@ -102,12 +123,11 @@
 
             .zplugins_log_info zplugins "plugin '${plugin_name}' loaded"
         else
-            .zplugins_log_warning zplugins "plugin '${plugin_name}' already loaded, cannot reload"
+            .zplugins_log_warning zplugins "plugin '${plugin_name}' already loaded, cannot reload; loaded: $(@zplugins_loaded_plugin_names)"
         fi
 
         return 0
     else
-        echo "Error: plugin path '${plugin_path}' is not a loadable file." >&2
         .zplugins_log_error zplugins "plugin path '${plugin_path}' is not a loadable file."
         return 1
     fi
@@ -151,6 +171,7 @@
         done
 
         builtin zstyle -d ${ZPLUGINS[_PLUGINS_CTX]}:${plugin_name}
+        .zplugins_remove_loaded_plugin "${plugin_name}"
 
         .zplugins_log_info zplugins"plugin unloaded"
     else
@@ -169,7 +190,7 @@
 
     local plugin_name="${1}"
 
-    if [[ " ${zsh_loaded_plugins[*]} " == *" ${plugin_name} "* ]]; then
+    if [[ "${ZPLUGINS[_LOADED]}" == *" ${plugin_name} "* ]]; then
         return 0
     else
         return 1
@@ -184,9 +205,35 @@
 @zplugins_loaded_plugin_names() {
     builtin emulate -L zsh
 
-    printf '%s' "$(builtin zstyle -L ${ZPLUGINS[_PLUGINS_CTX]}:'*' | cut -d ':' -f 4 | cut -d ' ' -f 1 | sort | uniq | tr -s '\012\015' ' ')"
+    if [[ "${ZPLUGINS[_LOADED]}" == " " ]]; then
+        printf ' '
+    else
+        printf '%s' "${ZPLUGINS[_LOADED]:1:-1}"
+    fi
 }
 @zplugins_remember_fn zplugins @zplugins_loaded_plugin_names
+
+.zplugins_add_loaded_plugin() {
+    local plugin_name="${1}"
+
+    if [[ ! $(@zplugins_is_loaded ${plugin_name}) ]]; then
+        ZPLUGINS[_LOADED]="${ZPLUGINS[_LOADED]}${plugin_name} "
+    else
+        .zplugins_log_error zplugins "plugin ${plugin_name} already in loaded list"
+    fi
+}
+@zplugins_remember_fn zplugins .zplugins_add_loaded_plugin
+
+.zplugins_remove_loaded_plugin() {
+    local plugin_name="${1}"
+
+    if [[ $(@zplugins_is_loaded ${plugin_name}) ]]; then
+        ZPLUGINS[_LOADED]="${ZPLUGINS[_LOADED]// ${plugin_name} / }"
+    else
+        .zplugins_log_error zplugins "plugin ${plugin_name} not in loaded list"
+    fi
+}
+@zplugins_remember_fn zplugins .zplugins_add_loaded_plugin
 
 ###################################################################################################
 # Internal
@@ -255,25 +302,27 @@
         .zplugins_plugin_ctx_set ${plugin_name} plugin-dir "${plugin_dir}"
         .zplugins_plugin_ctx_set ${plugin_name} plugin-file "${plugin_file}"
 
-        if [[ -n "#{3}" ]]; then
-            local -a dependencies=( "${3}" )
-            local dependency
-            zstyle -a $(@zplugins_plugin_context ${plugin_name}) dependencies dependencies
+        local dependency_string="$(@zplugins_plugin_dependencies ${plugin_name})"
+        if [[ -n "${dependency_string}" ]]; then
+            local -a dependencies=( "${(z)dependency_string}" )
+            local -a dependency
+
+            .zplugins_log_info "${plugin_name}" "loading dependencies (${(j:,:)dependencies}), ${#dependencies}, declared by plugin"
 
             for dependency in ${dependencies[@]}; do
+                local optional=false
                 if [[ "${dependency::1}" == '?' ]]; then
-                    optional=0
                     dependency="${dependency:1}"
-                else
-                    optional=1
+                    optional=true
                 fi
 
-                if @zplugins_is_loaded ${dependency} && ! optional; then
-                    : # happy path
-                elif optional; then
-                    .plugins_log_warning "${plugin_name}" "optional dependency '${dependency}' NOT satisfied"
-                else
-                    .plugins_log_error "${plugin_name}" "dependency '${dependency}' NOT satisfied"
+                @zplugins_is_loaded ${dependency}
+                local is_loaded=$?
+
+                if [[ ${is_loaded} -ne 0 && ${optional} == false ]]; then
+                    .zplugins_log_error "${plugin_name}" "dependency '${dependency}' NOT satisfied"
+                elif [[ ${is_loaded} -ne 0 && ${optional} == true ]]; then
+                    .zplugins_log_warning "${plugin_name}" "optional dependency '${dependency}' NOT satisfied"
                 fi
             done
         fi
@@ -286,6 +335,7 @@
             @zplugins_remember_fn "${plugin_name}" ${plugin_name}_plugin_unload
         fi
 
+        .zplugins_add_loaded_plugin "${plugin_name}"
         .zplugins_manager_update
 
         if whence -f ${plugin_name}_plugin_init &> /dev/null; then

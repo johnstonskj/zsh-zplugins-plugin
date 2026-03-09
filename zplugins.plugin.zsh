@@ -66,11 +66,17 @@
 typeset -gA ZPLUGINS
 ZPLUGINS[_PATH]="${0}"
 ZPLUGINS[_MODULE_PATH]="${ZPLUGINS[_PATH]:h}/modules"
+ZPLUGINS[_LOADED]=" "
 
-typeset -ga zplugins=()
 typeset -g ZPLUGINS_ONLY_MODULES=${ZPLUGINS_ONLY_MODULES:-}
 typeset -g ZPLUGINS_PLUGIN_HOME=${ZPLUGINS_PLUGIN_HOME:-${XDG_DATA_HOME:-${HOME}/.local/share}/plugins}
 typeset -g ZPLUGINS_USE_AS_MANAGER=${ZPLUGINS_USE_AS_MANAGER:-no}
+
+if [[ ! -v zplugins ]]; then
+    typeset -ga zplugins=()
+else
+    typeset -ga zplugins
+fi
 
 ###################################################################################################
 # @section logging
@@ -79,54 +85,19 @@ typeset -g ZPLUGINS_USE_AS_MANAGER=${ZPLUGINS_USE_AS_MANAGER:-no}
 
 source "${ZPLUGINS[_MODULE_PATH]}/log.zsh"
 
-.zplugins_log_trace zplugins "plugin globals $(.zplugins_logfmt_assoc_array ZPLUGINS)"
-
 ###################################################################################################
 # @section modules
 # @description Load the rest of the modules.
 #
 
-declare -a zplugins_only=( ${ZPLUGINS_ONLY_MODULES} )
+declare -a zplugins_all_modules=( functions aliases context depends env fields load manager paths )
+declare -a zplugins_only=( "${(z)ZPLUGINS_ONLY_MODULES}" )
 
-if [[ ${#zplugins_only} -eq 0 || ${zplugin_sonly[(ie)functions]} -le ${#zplugins_only} ]]; then
-    source "${ZPLUGINS[_MODULE_PATH]}/functions.zsh"
-fi
-
-if [[ ${#zplugins_only} -eq 0 || ${zplugin_sonly[(ie)aliases]} -le ${#zplugins_only} ]]; then
-    source "${ZPLUGINS[_MODULE_PATH]}/aliases.zsh"
-
-fi
-
-if [[ ${#zplugins_only} -eq 0 || ${zplugin_sonly[(ie)context]} -le ${#zplugins_only} ]]; then
-    source "${ZPLUGINS[_MODULE_PATH]}/context.zsh"
-
-fi
-
-if [[ ${#zplugins_only} -eq 0 || ${zplugin_sonly[(ie)env]} -le ${#zplugins_only} ]]; then
-    source "${ZPLUGINS[_MODULE_PATH]}/env.zsh"
-
-fi
-
-if [[ ${#zplugins_only} -eq 0 || ${zplugin_sonly[(ie)fields]} -le ${#zplugins_only} ]]; then
-    source "${ZPLUGINS[_MODULE_PATH]}/fields.zsh"
-
-fi
-
-if [[ ${#zplugins_only} -eq 0 || ${zplugin_sonly[(ie)load]} -le ${#zplugins_only} ]]; then
-    source "${ZPLUGINS[_MODULE_PATH]}/load.zsh"
-fi
-
-if [[ ${#zplugins_only} -eq 0 || ${zplugin_sonly[(ie)manager]} -le ${#zplugins_only} ]]; then
-    source "${ZPLUGINS[_MODULE_PATH]}/manager.zsh"
-
-fi
-
-if [[ ${#zplugins_only} -eq 0 || ${zplugin_sonly[(ie)paths]} -le ${#zplugins_only} ]]; then
-    source "${ZPLUGINS[_MODULE_PATH]}/paths.zsh"
-
-fi
-
-unset zplugins_only
+for module in ${zplugins_all_modules[@]}; do
+    if [[ ${#zplugins_only} -eq 0 || ${zplugin_sonly[(ie)${module}]} -le ${#zplugins_only} ]]; then
+        source "${ZPLUGINS[_MODULE_PATH]}/${module}.zsh"
+    fi
+done
 
 ###################################################################################################
 # @section lifecycle
@@ -137,6 +108,15 @@ unset zplugins_only
 zplugins_plugin_init() {
     builtin emulate -L zsh
 
+    # Do this by hand as the infrastructure isn't initialized to treat this as a real plugin.
+    path+=( "${ZPLUGINS[_PATH]:h}/bin" )
+    export PATH
+
+    fpath+=( "${ZPLUGINS[_PATH]:h}/functions" )
+    export FPATH
+
+    autoload -Uz zps-loaded
+
     .zplugins_manager_init
 }
 
@@ -146,3 +126,5 @@ zplugins_plugin_unload() {
 
     unset ZPLUGINS
 }
+
+zplugins_plugin_init

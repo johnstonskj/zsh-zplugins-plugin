@@ -29,7 +29,7 @@
         builtin zstyle ${ZPLUGINS[_PLUGINS_CTX]}:${plugin_name} functions ${fn_list}
 
         if [[ "${fn_name}" == _* && -z "${_comps[${fn_name:2}]}" ]]; then
-            .zplugins_log_info ${plugin_name} "function appears to be a completion for command '${fn_name:2}', adding to '_comps'"
+            .zplugins_log_info ${plugin_name} "function appears to be a completion for command '${fn_name:1}', adding to '_comps'"
             _comps[${fn_name:2}]=${fn_name}
         fi
     fi
@@ -37,7 +37,9 @@
 @zplugins_remember_fn zplugins @zplugins_remember_fn
 
 #
-# @description Remove all functions remembered for the named plugin.
+# @description
+#
+# Remove all functions remembered for the named plugin.
 #
 # @arg $1 string The plugin's name.
 #
