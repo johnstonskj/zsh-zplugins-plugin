@@ -1,10 +1,10 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
 #
-# @name zplugins
-# @brief Zsh plugin to provide standard plugin functionality for plugin development.
-# @repository https://github.com/johnstonskj/zsh-zplugins-plugin
-# @version 0.1.0
-# @license MIT AND Apache-2.0
+# @name: zplugins
+# @brief: Zsh plugin to provide standard plugin functionality for plugin development.
+# @repository: https://github.com/johnstonskj/zsh-zplugins-plugin
+# @version: 0.1.0
+# @license: MIT AND Apache-2.0
 #
 # @description
 #
@@ -109,9 +109,6 @@ zplugins_plugin_init() {
     builtin emulate -L zsh
 
     # Do this by hand as the infrastructure isn't initialized to treat this as a real plugin.
-    path+=( "${ZPLUGINS[_PATH]:h}/bin" )
-    export PATH
-
     fpath+=( "${ZPLUGINS[_PATH]:h}/functions" )
     export FPATH
 
