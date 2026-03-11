@@ -2,66 +2,17 @@
 
 Plugin state management functions.
 
+## Overview
+
+Plugin header fields are taken from structured comments in the plugin's main file, as shown in
+the following example.
+
 ## Index
 
-* [@zplugins_plugin_dir](#zpluginsplugindir)
-* [@zplugins_plugin_file](#zpluginspluginfile)
-* [@zplugins_plugin_functions_dir](#zpluginpluginfunctionsdir)
-* [@zplugins_plugin_bin_dir](#zpluginspluginbindir)
-* [@zplugins_short_description](#zpluginshortdescription)
 * [@zplugins_plugin_repository](#zpluginspluginrepository)
 * [@zplugins_plugin_homepage](#zpluginspluginhomepage)
 * [@zplugins_plugin_version](#zpluginspluginversion)
-* [@zplugins_license](#zpluginlicense)
-
-### @zplugins_plugin_dir
-
-#### Arguments
-
-* **$1** (string): The plugin's name.
-
-### @zplugins_plugin_file
-
-#### Arguments
-
-* **$1** (string): The plugin's name.
-
-### @zplugins_plugin_functions_dir
-
-#### Arguments
-
-* **$1** (string): The plugin's name.
-
-### @zplugins_plugin_bin_dir
-
-#### Arguments
-
-* **$1** (string): The plugin's name.
-
-## headers
-
-Plugin header fields
-
-```bash
-
-# @name PINAME
-# @description ONE_LINE_DESCRIPTION
-# @repository URL
-# @homepage URL
-# @version SEMVER
-# @license LICENSE_EXPR
-
-```
-
-### @zplugins_short_description
-
-#### Arguments
-
-* **$1** (string): The plugin's name.
-
-#### Output on stdout
-
-* The value of the `@brief` header field.
+* [@zplugins_license](#zpluginslicense)
 
 ### @zplugins_plugin_repository
 

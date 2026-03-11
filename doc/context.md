@@ -1,6 +1,10 @@
-# context
+# plugin
 
 Plugin context (zstyle) helpers.
+
+## Overview
+
+Global context functions.
 
 ## Index
 

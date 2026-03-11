@@ -9,8 +9,8 @@ the list tracked for the named plugin to allow it's removal later.
 
 ## Index
 
-* [@zplugins_define_alias](#zplugindefinealias)
-* [@zplugins_unalias_all](#zpluginunaliasall)
+* [@zplugins_define_alias](#zpluginsdefinealias)
+* [@zplugins_unalias_all](#zpluginsunaliasall)
 
 ### @zplugins_define_alias
 

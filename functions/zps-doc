@@ -2,18 +2,19 @@
 
 if ! command -v shdoc >/dev/null 2>&1; then
     echo "Error: no 'shdoc' command installed"
+    return 1
 fi
 
 declare name="${1}"
 if [[ -z "${name}" ]]; then
     # shellcheck disable=SC2086
     echo "Usage: $(basename ${0}) PLUGIN-NAME"
-    exit 1
+    return 1
 fi
 
 if ! @zplugins_is_loaded "${name}"; then
     echo "Error: plugin '${name}' is not loaded."
-    exit 1
+    return 1
 fi
 
 # shellcheck disable=SC2155,SC2086
@@ -71,10 +72,17 @@ done < "${plugin_file}"
 # Process Content with Shdoc, formatted if possible
 ###################################################################################################
 
-if command -v glow >/dev/null 2>&1; then
-    echo "${content}" | shdoc | glow
-elif command -v cat >/dev/null 2>&1; then
-    echo "${content}" | shdoc | cat --language md
+if [[ "${ZPS_NO_FORMAT}" == "1" ]]; then
+    echo "${content}" | shdoc
 else
-    echo "${content}" | shdoc | more
+    if command -v glow >/dev/null 2>&1; then
+        echo "${content}" | shdoc | glow
+    elif command -v cat >/dev/null 2>&1; then
+        echo "${content}" | shdoc | cat --language md
+    else
+        declare -s pager="${PAGER:-more}"
+        echo "${content}" | shdoc | ${pager}
+    fi
 fi
+
+return 0

@@ -5,28 +5,67 @@ declare name_string="$(@zplugins_loaded_plugin_names)"
 
 # shellcheck disable=SC2296 # lint doesn't understand '(z)'
 declare -a names=( "${(z)name_string}" )
+declare -a descriptions
+declare -a versions
 
+declare -i name_max=${#${:-Name}}
+declare -i descr_max=${#${:-Description}}
+declare -i version_max=${#${:-Version}}
 
-declare -i max_len=0
-for str in "${names[@]}"; do
-    current_len=${#str}
-    if (( current_len > max_len )); then
-        max_len=$current_len
+# shellcheck disable=SC2051
+for i in {1..${#names[@]}}; do
+    declare -i current_len=${#names[i]}
+    if (( current_len > name_max )); then
+        name_max=$current_len
+    fi
+    descriptions[i]="$(@zplugins_short_description "${names[i]}")"
+    current_len=${#descriptions[i]}
+    if (( current_len > descr_max )); then
+        descr_max=$current_len
+    fi
+    versions[i]="$(@zplugins_plugin_version "${names[i]}")"
+    current_len=${#versions[i]}
+    if (( current_len > version_max )); then
+        version_max=$current_len
     fi
 done
 
+declare Content
 
-# shellcheck disable=SC2296 # lint doesn't understand '(o)'
-for name in "${(o)names[@]}"; do
-    declare brief="$(@zplugins_short_description "${name}")"
-    if [[ -n "${brief}" ]]; then
-        brief=": ${brief}"
-    fi
+content="# Loaded Plugins\n"
 
-    declare version="$(@zplugins_plugin_version "${name}")"
-    if [[ -n "${version}" ]]; then
-        version=" (${version})"
-    fi
+printf -v line "| %-${name_max}s | %-${descr_max}s | %-${version_max}s |" "Name" "Description" "Version"
+content="${content}\n${line}"
 
-    printf " %${max_len}s%s%s\n" "${name}" "${brief}" "${version}"
+printf -v line "| %s | %s | %s |" "${(l(${name_max})(-))}" "${(l(${descr_max})(-))}" "${(l(${version_max})(-))}"
+content="${content}\n${line}"
+
+
+# shellcheck disable=SC2051,SC2296 # lint doesn't understand '(o)'
+for i in {1..${#names[@]}}; do
+    declare name="${names[i]}"
+    declare brief="${descriptions[i]}"
+    declare version="${versions[i]}"
+
+    printf -v line "| %-${name_max}s | %-${descr_max}s | %-${version_max}s |" "${name}" "${brief}" "${version}"
+    content="${content}\n${line}"
 done
+
+###################################################################################################
+# Display, formatted if possible
+###################################################################################################
+
+if [[ "${ZPS_NO_FORMAT}" == "1" ]]; then
+    echo "${content}"
+else
+    if command -v glow >/dev/null 2>&1; then
+        echo "${content}" | glow -w ${COLUMNS}
+    elif command -v cat >/dev/null 2>&1; then
+        echo "${content}" | cat --language md
+    else
+        declare -s pager="${PAGER:-more}"
+        echo "${content}" | ${pager}
+    fi
+fi
+
+return 0

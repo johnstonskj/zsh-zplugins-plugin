@@ -1,14 +1,15 @@
+# shellcheck shell=bash disable=SC2296 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
 
 declare name="${1}"
 if [[ -z "${name}" ]]; then
     # shellcheck disable=SC2086
     echo "Usage: $(basename ${0}) PLUGIN-NAME"
-    exit 1
+    return 1
 fi
 
 if ! @zplugins_is_loaded "${name}"; then
     echo "Error: plugin '${name}' is not loaded."
-    exit 1
+    return 1
 fi
 
 ###################################################################################################
@@ -16,32 +17,36 @@ fi
 ###################################################################################################
 
 declare -a aliases
+declare -a dependencies
 declare -A envvars
 declare -A fields
 declare -a functions
 declare plugin_dir
 declare plugin_file
-declare plugin_name
 
 while IFS= read -r line || [ -n "$line" ]; do
     if [[ "${line}" =~ old-([^[:space:]]+)([[:space:]]+([^[:space:]].*))? ]]; then
+        # shellcheck disable=SC2154
         envvars[${match[1]}]="${(Q)match[3]}"
     elif [[ "$line" =~ field_@_([^[:space:]]+)([[:space:]]+([^[:space:]].*))? ]]; then
         fields[${match[1]}]="${(Q)match[3]}"
     elif [[ "${line}" =~ ^aliases([[:space:]]+(.+)) ]]; then
-        declare value=${match[2]}
-        # shellcheck disable=SC2296
+        declare value=${(Q)match[2]}
         aliases=( "${(z)value}" )
-    elif [[ "${key}" =~ ^functions([[:space:]]+(.+)) ]]; then
-        declare value=${match[2]}
-        # shellcheck disable=SC2296
+    elif [[ "${line}" =~ ^dependencies([[:space:]]+(.+)) ]]; then
+        # shellcheck disable=SC2034
+        declare value=${(Q)match[2]}
+        dependencies=( "${(z)value}" )
+    elif [[ "${line}" =~ ^functions([[:space:]]+(.+)) ]]; then
+        # shellcheck disable=SC2034
+        declare value=${(Q)match[2]}
         functions=( "${(z)value}" )
     elif [[ "$line" =~ plugin-dir([[:space:]]+(.+)) ]]; then
         plugin_dir="${(Q)match[2]}"
     elif [[ "$line" =~ plugin-file([[:space:]]+(.+)) ]]; then
         plugin_file="${match[2]}"
     fi
-done < <(zstyle -L :zplugins:plugins:${name} | cut -d' ' -f3-) 
+done < <(zstyle -L :zplugins:plugins:"${name}" | cut -d' ' -f3-) 
 
 ###################################################################################################
 # Format Markdown Output
@@ -56,16 +61,36 @@ content="${content}Plugin source in file \`${plugin_file}\`, in directory \`[$(b
 
 if [[ ${#aliases} -gt 0 ]]; then
     content="${content}## Defined Aliases\n\n"
+    content="${content}*Aliases are defined via a call to \`@zplugins_define_alias\` during initialization. They are tracked so that they can be un-defined during plugin unload.*\n\n"
+
     for name in "${aliases[@]}"; do
         content="${content}* \`${name}\`\n"
     done
     content="${content}\n"
 fi
 
+if [[ ${#dependencies} -gt 0 ]]; then
+    content="${content}## Declared Dependencies\n\n"
+    content="${content}*Dependencies are defined via a call to \`@zplugins_declare_plugin_dependencies\` during initialization.*\n\n"
+
+    for name in "${dependencies[@]}"; do
+        # shellcheck disable=SC2155,2086
+        declare dep_brief="$(@zplugins_short_description ${name})"
+        content="${content}* \`${name}\`: ${dep_brief}\n"
+    done
+    content="${content}\n"
+fi
+
 if [[ ${#functions} -gt 0 ]]; then
     content="${content}## Defined Functions\n\n"
+    content="${content}*Functions are may be tracked manually using \`@zplugins_remember_fn\`, or \`@zplugins_register_function_dir\`. However, the plugin manager will automatically define/track functions in the \`functions\` directory and a plugins \`_init\` and \`_unload\` functions.*\n\n"
+
     for name in "${functions[@]}"; do
-        content="${content}* \`${name}\`\n"
+        if [[ "${name}" == .* ]]; then
+            content="${content}* *\`${name}\`*: internal\n"
+        else
+            content="${content}* \`${name}\`\n"
+        fi
     done
     content="${content}\n"
 fi
@@ -73,6 +98,8 @@ fi
 # shellcheck disable=SC1009
 if [[ ${#envvars} -gt 0 ]]; then
     content="${content}## Saved Environment Variables\n\n"
+    content="${content}*Environment variables can be saved during initialization with a call to \`@zplugins_envvar_save\` which will then restore their original value when the plugin is unloaded.*\n\n"
+
     # shellcheck disable=SC2296
     for key in "${(@ko)envvars[@]}"; do
         content="${content}* **\`${key}\`**: \`${envvars[${key}]}\`\n"
@@ -82,6 +109,8 @@ fi
 
 if [[ ${#envvars} -gt 0 ]]; then
     content="${content}## Header Fields\n\n"
+    content="${content}*Header fields are file-level [shdoc](https://github.com/reconquest/shdoc) annotations stored during initialization for faster run-time lookup.*\n\n"
+
     # shellcheck disable=SC2296
     for key in "${(@ko)fields[@]}"; do
        content="${content}* **${key}**: ${fields[${key}]}\n"
@@ -93,10 +122,17 @@ fi
 # Display, formatted if possible
 ###################################################################################################
 
-if command -v glow >/dev/null 2>&1; then
-    echo "${content}" | glow -w ${COLUMNS}
-elif command -v cat >/dev/null 2>&1; then
-    echo "${content}" | cat --language md
+if [[ "${ZPS_NO_FORMAT}" == "1" ]]; then
+    echo "${content}"
 else
-    echo "${content}" | more
+    if command -v glow >/dev/null 2>&1; then
+        echo "${content}" | glow -w ${COLUMNS}
+    elif command -v cat >/dev/null 2>&1; then
+        echo "${content}" | cat --language md
+    else
+        declare -s pager="${PAGER:-more}"
+        echo "${content}" | ${pager}
+    fi
 fi
+
+return 0
