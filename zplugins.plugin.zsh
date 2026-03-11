@@ -79,16 +79,11 @@ else
 fi
 
 ###################################################################################################
-# @section logging
-# @description Source the log sub-module first.
-#
-
-source "${ZPLUGINS[_MODULE_PATH]}/log.zsh"
-
-###################################################################################################
 # @section modules
 # @description Load the rest of the modules.
 #
+
+source "${ZPLUGINS[_MODULE_PATH]}/log.zsh"
 
 declare -a zplugins_all_modules=( functions aliases context depends env fields load manager paths )
 declare -a zplugins_only=( "${(z)ZPLUGINS_ONLY_MODULES}" )
@@ -100,6 +95,20 @@ for module in ${zplugins_all_modules[@]}; do
 done
 
 ###################################################################################################
+# @section initialization
+# @description Plugin system initialization.
+#
+
+@zplugins_init() {
+    builtin emulate -L zsh
+
+    # The file is obviously sourced at this point, so go ahead and setup this plugin.
+    .zplugins_plugin_setup zplugins "${ZPLUGINS[_PATH]}"
+
+    return 0
+}
+
+###################################################################################################
 # @section lifecycle
 # @description Plugin lifecycle functions.
 #
@@ -108,13 +117,13 @@ done
 zplugins_plugin_init() {
     builtin emulate -L zsh
 
-    # Do this by hand as the infrastructure isn't initialized to treat this as a real plugin.
-    fpath+=( "${ZPLUGINS[_PATH]:h}/functions" )
-    export FPATH
+    # load the plugins required to actually run this thing.
+    .zplugins_load_bootstrap_plugins
 
-    autoload -Uz zps-context zps-doc zps-loaded
-
+    # initialize as plugin manager, IF required.
     .zplugins_manager_init
+
+    return 0
 }
 
 # @internal
@@ -122,6 +131,6 @@ zplugins_plugin_unload() {
     builtin emulate -L zsh
 
     unset ZPLUGINS
-}
 
-zplugins_plugin_init
+    return 0
+}

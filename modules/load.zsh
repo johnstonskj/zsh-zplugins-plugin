@@ -9,6 +9,8 @@
 # * From the `zplugins` variable.
 #
 
+declare -a ZPLUGINS_BOOTSTRAP_PLUGINS=( xdg shlog paths )
+
 #
 # @description
 #
@@ -38,14 +40,14 @@
 }
 @zplugins_remember_fn zplugins @zplugins_load_all_from_sheldon
 
-@zplugins_load_bootstrap_plugins() {
+# @internal
+.zplugins_load_bootstrap_plugins() {
     .zplugins_log_info zplugins "loading plugins required to bootstrap .zshenv"
 
-    local -a plugins=( xdg shlog paths )
     local plugin_name plugin_path
     local -a plugin_list
 
-    for plugin_name in ${plugins[@]}; do
+    for plugin_name in ${ZPLUGINS_BOOTSTRAP_PLUGINS[@]}; do
         if ! @zplugins_is_loaded ${plugin}; then
             plugin_path=$(.zplugins_find_load_path ${plugin_name})
             if [[ $? -eq 0 ]]; then
@@ -58,7 +60,7 @@
 
     .zplugins_load_all_inner "${plugin_list[*]}"
 }
-@zplugins_remember_fn zplugins @zplugins_load_bootstrap_plugins
+@zplugins_remember_fn zplugins .zplugins_load_bootstrap_plugins
 
 #
 # @description
@@ -152,7 +154,14 @@
     if [[ ${plugin_name} == zplugins && ${as_manager} ]]; then
         .zplugins_log_warning zplugins 'cannot unload plugin as it is acting as plugin manager'
     elif [[ -n "${plugin_data}" ]]; then
-        .zplugins_manager_update
+
+        # Call this first, this way the plugin removes any custom stuff while the 
+        # automatic stuff remains.
+        if whence -f ${plugin_name}_plugin_unload &> /dev/null; then
+            if ! ${plugin_name}_plugin_unload; then
+                .zplugins_log_error "${plugin_name}" "plugin's _unload function returned non-zero"
+            fi
+        fi
 
         @zplugins_unfunction_all ${plugin_name}
 
@@ -220,6 +229,7 @@
 
     if [[ ! $(@zplugins_is_loaded ${plugin_name}) ]]; then
         ZPLUGINS[_LOADED]="${ZPLUGINS[_LOADED]}${plugin_name} "
+        .zplugins_manager_update
     else
         .zplugins_log_error zplugins "plugin ${plugin_name} already in loaded list"
     fi
@@ -231,6 +241,7 @@
 
     if [[ $(@zplugins_is_loaded ${plugin_name}) ]]; then
         ZPLUGINS[_LOADED]="${ZPLUGINS[_LOADED]// ${plugin_name} / }"
+        .zplugins_manager_update
     else
         .zplugins_log_error zplugins "plugin ${plugin_name} not in loaded list"
     fi
@@ -339,14 +350,17 @@
         fi
 
         .zplugins_add_loaded_plugin "${plugin_name}"
-        .zplugins_manager_update
 
+        # Do this last so that all the automatic registration stuff is complete
+        # and any data/functions are accessible.
         if whence -f ${plugin_name}_plugin_init &> /dev/null; then
             @zplugins_remember_fn "${plugin_name}" ${plugin_name}_plugin_init
-            ${plugin_name}_plugin_init "${plugin_path}" "${plugin_name}"
+            if ! ${plugin_name}_plugin_init "${plugin_path}" "${plugin_name}"; then
+                .zplugins_log_error "${plugin_name}" "plugin's _init function returned non-zero"
+            fi
         fi
     else
-        .zplugins_log_warning zplugins "plugin '${plugin_name}' already registered, cannot re-register"
+        .zplugins_log_warning zplugins "plugin '${plugin_name}' already setup, cannot re-setup"
     fi
 }
 @zplugins_remember_fn zplugins .zplugins_plugin_setup

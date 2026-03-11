@@ -4,7 +4,7 @@
 declare name_string="$(@zplugins_loaded_plugin_names)"
 
 # shellcheck disable=SC2296 # lint doesn't understand '(z)'
-declare -a names=( "${(z)name_string}" )
+declare -a names=( "${(zo)name_string}" )
 declare -a descriptions
 declare -a versions
 

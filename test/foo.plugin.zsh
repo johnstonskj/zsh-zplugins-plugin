@@ -20,7 +20,7 @@ foo_plugin_init() {
 
     echo
     echo ">> after init, before unload"
-    echo ">> >> REGISTERED: $(@zplugins_all_plugin_names)"
+    echo ">> >> REGISTERED: $(@zplugins_loaded_plugin_names)"
     echo ">> >> plugin styles: $(@zplugins_plugin_context_data foo)"
 }
 
@@ -40,5 +40,5 @@ foo_plugin_unload() {
 
 echo
 echo ">> before init"
-echo ">> >> REGISTERED: $(@zplugins_all_plugin_names)"
+echo ">> >> REGISTERED: $(@zplugins_loaded_plugin_names)"
 echo ">> >> plugin styles: $(@zplugins_plugin_context_data foo)"

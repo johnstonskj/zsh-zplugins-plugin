@@ -36,7 +36,7 @@
     local plugin_list
 
     if .zplugins_as_manager ; then
-        plugin_list=$(@zplugins_all_plugin_names)
+        plugin_list=$(@zplugins_loaded_plugin_names)
         zsh_loaded_plugins=(${(s: :)plugin_list})
         export zsh_loaded_plugins
     fi
