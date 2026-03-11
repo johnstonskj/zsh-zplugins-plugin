@@ -116,9 +116,11 @@
     fi
 
     if [[ -f "${plugin_path}" ]]; then
-        source "${plugin_path}"
-
         if ! @zplugins_is_loaded ${plugin_name}; then
+            if ! source "${plugin_path}"; then
+                .zplugins_log_error zplugins "could not source plugin from file ${plugin_path}; errno: $?"
+            fi
+
             .zplugins_plugin_setup ${plugin_name} ${plugin_path}
 
             .zplugins_log_info zplugins "plugin '${plugin_name}' loaded"
@@ -301,6 +303,7 @@
     if ! @zplugins_is_loaded ${plugin_name}; then
         .zplugins_plugin_ctx_set ${plugin_name} plugin-dir "${plugin_dir}"
         .zplugins_plugin_ctx_set ${plugin_name} plugin-file "${plugin_file}"
+        .zplugins_field_parser "${plugin_name}" "${plugin_dir}/${plugin_file}"
 
         local dependency_string="$(@zplugins_plugin_dependencies ${plugin_name})"
         if [[ -n "${dependency_string}" ]]; then

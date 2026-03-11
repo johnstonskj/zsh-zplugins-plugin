@@ -38,7 +38,7 @@ ZPLUGINS[_CONTEXT]="${ZPLUGINS[_PLUGINS_CTX]}:zplugins"
 
 # @internal
 .zplugins_plugin_ctx_get() {
-    local plugin_name="${1}"
+    local plugin_name="${1}";
     local style_name="${2}"
     local style_value
 
@@ -52,7 +52,8 @@ ZPLUGINS[_CONTEXT]="${ZPLUGINS[_PLUGINS_CTX]}:zplugins"
 .zplugins_plugin_ctx_set() {
     local plugin_name="${1}"
     local style_name="${2}"
-    local style_value="${3}"
+    shift 2
+    local style_value="$*"
 
     builtin zstyle $(@zplugins_plugin_context ${plugin_name}) ${style_name} ${style_value}
 }

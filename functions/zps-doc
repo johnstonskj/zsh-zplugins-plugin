@@ -1,0 +1,80 @@
+# shellcheck disable=SC2148 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
+
+if ! command -v shdoc >/dev/null 2>&1; then
+    echo "Error: no 'shdoc' command installed"
+fi
+
+declare name="${1}"
+if [[ -z "${name}" ]]; then
+    # shellcheck disable=SC2086
+    echo "Usage: $(basename ${0}) PLUGIN-NAME"
+    exit 1
+fi
+
+if ! @zplugins_is_loaded "${name}"; then
+    echo "Error: plugin '${name}' is not loaded."
+    exit 1
+fi
+
+# shellcheck disable=SC2155,SC2086
+declare plugin_dir="$(@zplugins_plugin_dir ${name})"
+# shellcheck disable=SC2155,SC2086
+declare plugin_file="${plugin_dir}/$(@zplugins_plugin_file ${name})"
+
+###################################################################################################
+# Pre-process File
+###################################################################################################
+
+declare header_state=top
+declare emitted_description=no
+declare pre
+declare content
+while IFS= read -r line || [ -n "$line" ]; do
+    pre="${pre}\n${line}"
+    if [[ ${header_state} =~ top && "${line}" =~ (-\*- mode: sh|^#!/) ]]; then
+        header_state=top
+        content="${content}\n${line}"
+    elif [[ ${header_state} =~ top && "${line}" =~ ^[[:space:]]*$ ]]; then
+        content="${content}\n${line}"
+        header_state=space
+    elif [[ ${header_state} =~ (top|space|within) && "${line}" =~ ^#[[:space:]]*@([[:alpha:]]+)([[:space:]]*(.*$))? ]]; then
+        header_state=within
+        # shellcheck disable=SC2154
+        case "${match[1]}" in
+            name)
+                content="${content}\n# @name Zsh Plugin ${match[3]}"
+                ;;
+            brief)
+                content="${content}\n${line}\n# @description\n#"
+                emitted_description=yes
+                ;;
+            description)
+                if [[ ${emitted_description} == no ]]; then
+                    content="${content}\n${line}"
+                else
+                    content="${content}\n#"
+                fi
+                ;;
+            *)
+                content="${content}\n# * **${match[1]}**: ${match[3]}"
+                ;;
+        esac
+    elif [[ ${header_state} == within && "${line}" =~ ^[[:space:]]*$ ]]; then
+        content="${content}\n${line}"
+        header_state=complete
+    else
+        content="${content}\n${line}"
+    fi
+done < "${plugin_file}"
+
+###################################################################################################
+# Process Content with Shdoc, formatted if possible
+###################################################################################################
+
+if command -v glow >/dev/null 2>&1; then
+    echo "${content}" | shdoc | glow
+elif command -v cat >/dev/null 2>&1; then
+    echo "${content}" | shdoc | cat --language md
+else
+    echo "${content}" | shdoc | more
+fi

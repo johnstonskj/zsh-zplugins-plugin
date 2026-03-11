@@ -20,21 +20,32 @@
 #
 
 # @internal
-.zplugins_plugin_field() {
-    builtin emulate -L zsh
+.zplugins_field_style_name() {
+    local field_name="${1}"
 
-    local plugin_name="${1}"
-    local plugin_path="$(@zplugins_plugin_dir ${plugin_name})/$(@zplugins_plugin_file ${plugin_name})"
-    local field_name="${2}"
-
-    local value=$(grep -m 1 -E "^#[ \\t]+@${field_name}" "${plugin_path}" | cut -d':' -f2-)
-    if [[ $? -eq 0 ]]; then
-        printf '%s' "${${value%${value##*[^[:blank:]]}}#${${value%${value##*[^[:blank:]]}}%%[^[:blank:]]*}}"
-    else
-        printf ''
-    fi
+    printf '%s' "field_@_${field_name}"
 }
-@zplugins_remember_fn zplugins .zplugins_plugin_field
+
+# @internal
+.zplugins_field_parser() {
+    local plugin_name="${1}"
+    local plugin_file_path="${2}"
+
+    local header_state=top
+    while IFS= read -r line || [ -n "$line" ]; do
+        if [[ ${header_state} == top && "${line}" =~ (-\*- mode: sh|^#!/) ]]; then
+            header_state=top
+        elif [[ ${header_state} == top && "${line}" =~ ^[[:space:]]*$ ]]; then
+            header_state=space
+        elif [[ ${header_state} =~ (top|space|within) && "${line}" =~ ^#[[:space:]]*@([[:alpha:]]+)[[:space:]]*:?[[:space:]]+([^[:space:]].*)$ ]]; then
+            header_state=within
+            .zplugins_plugin_ctx_set ${plugin_name} "$(.zplugins_field_style_name ${match[1]})" "${match[2]}"
+        elif [[ ${header_state} == within && "${line}" =~ ^[[:space:]]*$ ]]; then
+            break
+        fi
+    done < "${plugin_file_path}"
+    return 0
+}
 
 #
 # @arg $1 string The plugin's name.
@@ -43,7 +54,7 @@
 @zplugins_short_description() {
     builtin emulate -L zsh
 
-    .zplugins_plugin_field "${1}" brief
+    .zplugins_plugin_ctx_get "${1}" "$(.zplugins_field_style_name brief)"
 }
 @zplugins_remember_fn zplugins @zplugins_plugin_short_description
 
@@ -54,7 +65,7 @@
 @zplugins_plugin_repository() {
     builtin emulate -L zsh
 
-    .zplugins_plugin_field "${1}" repository
+    .zplugins_plugin_ctx_get "${1}" "$(.zplugins_field_style_name repository)"
 }
 @zplugins_remember_fn zplugins @zplugins_plugin_repository
 
@@ -65,7 +76,7 @@
 @zplugins_plugin_homepage() {
     builtin emulate -L zsh
 
-    .zplugins_plugin_field "${1}" homepage
+    .zplugins_plugin_ctx_get "${1}" "$(.zplugins_field_style_name homepage)"
 }
 @zplugins_remember_fn zplugins @zplugins_plugin_homepage
 
@@ -76,7 +87,7 @@
 @zplugins_plugin_version() {
     builtin emulate -L zsh
 
-    .zplugins_plugin_field "${1}" version
+    .zplugins_plugin_ctx_get "${1}" "$(.zplugins_field_style_name version)"
 }
 @zplugins_remember_fn zplugins @zplugins_plugin_version
 
@@ -87,6 +98,6 @@
 @zplugins_license() {
     builtin emulate -L zsh
 
-    .zplugins_plugin_field "${1}" license
+    .zplugins_plugin_ctx_get "${1}" "$(.zplugins_field_style_name license)"
 }
 @zplugins_remember_fn zplugins @zplugins_plugin_license
