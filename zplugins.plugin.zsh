@@ -112,7 +112,7 @@ zplugins_plugin_init() {
     fpath+=( "${ZPLUGINS[_PATH]:h}/functions" )
     export FPATH
 
-    autoload -Uz zps-loaded
+    autoload -Uz zps-context zps-doc zps-loaded
 
     .zplugins_manager_init
 }
