@@ -73,10 +73,10 @@ if [[ ${#dependencies} -gt 0 ]]; then
     content="${content}## Declared Dependencies\n\n"
     content="${content}*Dependencies are defined via a call to \`@zplugins_declare_plugin_dependencies\` during initialization.*\n\n"
 
-    for name in "${dependencies[@]}"; do
+    for dep in "${dependencies[@]}"; do
         # shellcheck disable=SC2155,2086
-        declare dep_brief="$(@zplugins_short_description ${name})"
-        content="${content}* \`${name}\`: ${dep_brief}\n"
+        declare dep_brief="$(@zplugins_short_description ${dep})"
+        content="${content}* \`${dep}\`: ${dep_brief}\n"
     done
     content="${content}\n"
 fi
@@ -85,11 +85,11 @@ if [[ ${#functions} -gt 0 ]]; then
     content="${content}## Defined Functions\n\n"
     content="${content}*Functions are may be tracked manually using \`@zplugins_remember_fn\`, or \`@zplugins_register_function_dir\`. However, the plugin manager will automatically define/track functions in the \`functions\` directory and a plugins \`_init\` and \`_unload\` functions.*\n\n"
 
-    for name in "${functions[@]}"; do
-        if [[ "${name}" == .* ]]; then
-            content="${content}* *\`${name}\`*: internal\n"
+    for fun in "${functions[@]}"; do
+        if [[ "${fun}" == .* ]]; then
+            content="${content}* *\`${fun}\`*: internal\n"
         else
-            content="${content}* \`${name}\`\n"
+            content="${content}* \`${fun}\`\n"
         fi
     done
     content="${content}\n"
@@ -117,6 +117,13 @@ if [[ ${#envvars} -gt 0 ]]; then
     done
     content="${content}\n"
 fi
+
+context=$(zstyle -L :zplugins:plugins:"${name}" | cut -d' ' -f2-)
+content="${content}## Raw Zstyle Context\n\n"
+content="${content}\`\`\`bash\n"
+content="${content}❯ zstyle -L :zplugins:plugins:${name} | cut -d' ' -f2-\n"
+content="${content}${context}\n"
+content="${content}\`\`\`\n"
 
 ###################################################################################################
 # Display, formatted if possible
