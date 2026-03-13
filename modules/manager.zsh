@@ -1,6 +1,6 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
 #
-# @name manager
+# @name Module manager
 # @brief Plugin manager implementation.
 #
 

@@ -1,6 +1,6 @@
 # plugin
 
-Plugin context (zstyle) helpers.
+Manage plugin context (Zstyle) data.
 
 ## Overview
 

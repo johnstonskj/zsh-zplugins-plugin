@@ -1,6 +1,6 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
 #
-# @name fields
+# @name Module fields
 # @brief Plugin state management functions.
 #
 # @description

@@ -1,4 +1,4 @@
-# paths
+# Module paths
 
 Path handing functions.
 

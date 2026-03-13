@@ -1,10 +1,64 @@
-# zplugins
+# Plugin zplugins
 
 Zsh plugin to provide standard plugin functionality for plugin development.
 
 ## Overview
 
 A very bare-bones Zsh plugin manager which can be used as a set of plugin utilities or as a framework.
+
+### Plugin Life-cycle
+
+The following state chart shows the basic lifecycle of a plugin, from nothing, through loading,
+unloading and shell termination.
+
+```text
+.                        (○)
+.                         │ load
+.                         ▼
+. ╭────────┬──────────────┴───────────────────────────────╮
+. │ source ▼              loading                         │
+. │   ╭────┴────╮     ╭────────────╮     ╭────────────╮   │
+. │   │ sourced ├────▶︎┤ pre-loaded ├────▶︎┤ registered │   │ 
+. │   ╰────┬────╯ set ╰──────┬─────╯ add ╰──────┬─────╯   │
+. │        ▼                 ▼                  ▼         │
+. ╰───────(×)───────────────(×)─────────────────┼─────────╯
+.                           ┌──◀︎────────────────┘                   
+.                       ╭───┴────╮
+.                       │ loaded ├────────────────────────┐
+.                       ╰───┬────╯      shell-termination │
+.                           │ unload                      │
+.                           ▼                             │
+​.    ╭──────────┬───────────┴───────────────────╮         │
+.    │   remove ▼        unloading              │         │
+.    │   ╭──────┴───────╮        ╭──────────╮   │         │
+.    │   │ unregistered ├───────▶︎┤ unloaded ├─▶︎─┼──▶︎(●)◀︎──┘  
+.    │   ╰──────────────╯ unset  ╰─────┬────╯   │
+.    │                                 ▼        │
+.    ╰────────────────────────────────(×)───────╯
+```
+
+Note that the symbol `(○)` denotes the initial state, `(●)` denotes the final state, and `(×)` denotes an error (also final) state.
+
+States:
+
+* **loading**; a compound state denoting the process of finding the source file, evaluating it and registering it as a plugin.
+* **sourced**; the source file has been evaluated successfully.
+* **pre-loaded**; the plugin auto-registration tasks are completed and the plugin's `_init` function has been called.
+* **registered**; the plugin has been added to the loaded plugin list.
+* **loaded**; the plugin is now running.
+* **unregistered**; the plugin has been removed from the loaded plugin list.
+* **unloaded**; the plugin's `_unload` function has been called and all auto-deregistration tasks are completed.
+
+Events:
+
+* **load**; corresponds to the `@zplugins_plugin_load` function being called.
+* **source**; evaluate the plugin source file using the shell builtin `source` command.
+* **set**; set up the plugin by registering any relevant components.
+* **add**; add the plugin to the managed list.
+* **unload**; corresponds to the `@zplugins_plugin_unload` function being called.
+* **shell-termination**; when a shell exits by any means.
+* **remove**; remove the plugin from the managed list.
+* **unset**; tear down the plugin by deregistering any relevant components.
 
 ### Plugin State Management
 
@@ -49,4 +103,35 @@ will act as a limited plugin manager.
 * [manager](./modules/manager.md)
 * [paths](./modules/paths.md)
 
+## Index
+
+* [@zplugins_init](#zpluginsinit)
+
+## initialization
+
+Standard path and variable setup.
+
+### @zplugins_init
+
+Plugin system initialization.
+
+#### Example
+
+```bash
+ZPLUGINS_PLUGIN_HOME=${XDG_DATA_HOME:-${HOME}/.local/share}/zsh/plugins
+source "${ZPLUGINS_PLUGIN_HOME}/zsh-zplugins-plugin/zplugins.plugin.zsh"
+@zplugins_init
+```
+
+#### Arguments
+
+* **$1** (string): A boolean to determine whether zplugins acts as the plugin manager.
+
+#### Variables set
+
+* **ZPLUGINS_USE_AS_MANAGER** (boolean): Will be set to the value of arg-1, or 'no'.
+
+#### Exit codes
+
+* **0**: Initialization was successful
 

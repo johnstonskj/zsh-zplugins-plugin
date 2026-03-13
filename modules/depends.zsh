@@ -1,6 +1,6 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
 #
-# @name depends
+# @name Module depends
 # @brief Plugin dependency management.
 #
 # This module provides for plgins to declare dependencies which should be loaded prior

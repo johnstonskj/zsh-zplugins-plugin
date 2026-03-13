@@ -1,6 +1,6 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
 #
-# @name paths
+# @name Module paths
 # @brief Path handing functions.
 
 ###################################################################################################

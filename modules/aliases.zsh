@@ -1,19 +1,31 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
 #
-# @name aliases
-# @brief Track plugin-defined aliases.
+# @name Module aliases
+# @brief Manage plugin-defined aliases.
+#
+# @description
+#
+# This module provides the ability to define an alias within the scope of a plugin
+# so that when the plugin is unloaded the alias is also removed. A plugin may call
+# `@zplugins_define_alias` either during their `_init` function or during plugin
+# sourcing.
 #
 
 #
-# @description Define the alias (name and value) and add the alias name to
-#   the list tracked for the named plugin to allow it's removal later.
+# @description
+#
+# Define the alias (name and value) and add the alias name to the plugin's context
+# to allow it's removal later.
+#
+# @example 
+#    @zplugins_define_alias shdoc 'shdoc-all'\
+#       'for file in *.zsh; do shdoc ${file} > ${file:r}.md; done'
 #
 # @arg $1 string The plugin's name.
 # @arg $2 string The name of the alias.
 # @arg $3 string The value to expand into.
 #
-# @example 
-#    @zplugins_define_alias shdoc shdoc-all 'for file in *.zsh; do shdoc ${file} > ${file:r}.md; done'
+# @see @zplugins_unalias_all
 #
 @zplugins_define_alias() {
     builtin emulate -L zsh
@@ -23,11 +35,13 @@
     if [[ "${2}" =~ -[gs] ]]; then
         alias_flag="${2} "
         alias_name="${3}"
-        alias_value="${4}"
+        shift 3
+        alias_value="$*"
     else
         alias_flag=''
         alias_name="${2}"
-        alias_value="${3}"
+        shift 2
+        alias_value="$*"
     fi
 
     builtin zstyle -a $(@zplugins_plugin_context ${plugin_name}) aliases alias_list
@@ -42,9 +56,15 @@
 @zplugins_remember_fn zplugins @zplugins_define_alias
 
 #
-# @description Remove all aliases remembered for the named plugin.
+# @description
+#
+# Remove all aliases remembered for the named plugin. Usually this is only called by
+# the plugin unload function.
 #
 # @arg $1 string The plugin's name.
+#
+# @see @zplugins_define_alias
+# @see [@zplugins_plugin_unload](load.md#zpluginspluginunload)
 #
 @zplugins_unalias_all() {
     builtin emulate -L zsh

@@ -1,4 +1,4 @@
-# fields
+# Module fields
 
 Plugin state management functions.
 

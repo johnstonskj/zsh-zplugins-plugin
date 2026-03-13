@@ -1,4 +1,4 @@
-# depends
+# Module depends
 
 Plugin dependency management.
 
@@ -22,5 +22,5 @@ Plugin dependency management.
 
 #### Output on stdout
 
-* The names of the plugins that the named plugin depends on.
+* The array of names of the plugins that the named plugin depends on.
 

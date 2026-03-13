@@ -1,7 +1,22 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
 #
-# @name context
-# @brief Plugin context (zstyle) helpers.
+# @name Module context
+# @brief Manage plugin context (Zstyle) data.
+#
+#
+# @example
+#    ❯ zstyle -L :zplugins:plugins:bat
+#    zstyle :zplugins:plugins:bat aliases 'cat battail'
+#    zstyle :zplugins:plugins:bat field_@_brief 'Set `bat` as a cat replacement.'
+#    zstyle :zplugins:plugins:bat field_@_license 'MIT AND Apache-2.0'
+#    zstyle :zplugins:plugins:bat field_@_name bat
+#    zstyle :zplugins:plugins:bat field_@_repository https://github.com/johnstonskj/zsh-bat-plugin
+#    zstyle :zplugins:plugins:bat field_@_version 0.1.1
+#    zstyle :zplugins:plugins:bat functions bat_plugin_unload bat_plugin_init
+#    zstyle :zplugins:plugins:bat old-MANPAGER 'sh -c '\''col -bx | bat -l man -p'\'
+#    zstyle :zplugins:plugins:bat old-MANROFFOPT -c
+#    zstyle :zplugins:plugins:bat plugin-dir /Users/s0j0g7m/Projects/Config/local/share/zsh/plugins/zsh-bat-plugin
+#    zstyle :zplugins:plugins:bat plugin-file bat.plugin.zsh
 #
 
 typeset -gA ZPLUGINS
@@ -60,6 +75,9 @@ ZPLUGINS[_CONTEXT]="${ZPLUGINS[_PLUGINS_CTX]}:zplugins"
 @zplugins_remember_fn zplugins .zplugins_plugin_ctx_set
 
 #
+# @description
+#
+# Return the context path for the named plugin. This is the specific Zstyle
 # @arg $1 string The plugin's name.
 # @stdout The context path for the named plugin.
 #

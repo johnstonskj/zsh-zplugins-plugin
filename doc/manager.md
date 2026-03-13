@@ -1,4 +1,4 @@
-# manager
+# Module manager
 
 Plugin manager implementation.
 

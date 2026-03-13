@@ -1,6 +1,6 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
 #
-# @name log
+# @name Module log
 # @brief Simple logging capability to avoid dependencies.
 #
 
@@ -8,7 +8,8 @@
 # @section private
 # @description
 #
-# Setup and truly private functions. These are not intended to be used by plugins directly###################################################################################################
+# Setup and truly private functions. These are not intended to be used by plugins directly
+#
 
 ZPLUGINS_LOG=${ZPLUGINS_LOG:-1}
 

@@ -1,4 +1,4 @@
-# functions
+# Module functions
 
 Track plugin-defined functions.
 

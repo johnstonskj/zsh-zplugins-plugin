@@ -1,6 +1,6 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
 #
-# @name zplugins
+# @name Plugin zplugins
 # @brief Zsh plugin to provide standard plugin functionality for plugin development.
 # @repository https://github.com/johnstonskj/zsh-zplugins-plugin
 # @version 0.1.0
@@ -9,6 +9,60 @@
 # @description
 #
 # A very bare-bones Zsh plugin manager which can be used as a set of plugin utilities or as a framework.
+#
+# ### Plugin Life-cycle
+#
+# The following state chart shows the basic lifecycle of a plugin, from nothing, through loading,
+# unloading and shell termination.
+#
+# ```text
+# .                        (○)
+# .                         │ load
+# .                         ▼
+# . ╭────────┬──────────────┴───────────────────────────────╮
+# . │ source ▼              loading                         │
+# . │   ╭────┴────╮     ╭────────────╮     ╭────────────╮   │
+# . │   │ sourced ├────▶︎┤ pre-loaded ├────▶︎┤ registered │   │ 
+# . │   ╰────┬────╯ set ╰──────┬─────╯ add ╰──────┬─────╯   │
+# . │        ▼                 ▼                  ▼         │
+# . ╰───────(×)───────────────(×)─────────────────┼─────────╯
+# .                           ┌──◀︎────────────────┘                   
+# .                       ╭───┴────╮
+# .                       │ loaded ├────────────────────────┐
+# .                       ╰───┬────╯      shell-termination │
+# .                           │ unload                      │
+# .                           ▼                             │
+# ​.    ╭──────────┬───────────┴───────────────────╮         │
+# .    │   remove ▼        unloading              │         │
+# .    │   ╭──────┴───────╮        ╭──────────╮   │         │
+# .    │   │ unregistered ├───────▶︎┤ unloaded ├─▶︎─┼──▶︎(●)◀︎──┘  
+# .    │   ╰──────────────╯ unset  ╰─────┬────╯   │
+# .    │                                 ▼        │
+# .    ╰────────────────────────────────(×)───────╯
+# ```
+#
+# Note that the symbol `(○)` denotes the initial state, `(●)` denotes the final state, and `(×)` denotes an error (also final) state.
+#
+# States:
+#
+# * **loading**; a compound state denoting the process of finding the source file, evaluating it and registering it as a plugin.
+# * **sourced**; the source file has been evaluated successfully.
+# * **pre-loaded**; the plugin auto-registration tasks are completed and the plugin's `_init` function has been called.
+# * **registered**; the plugin has been added to the loaded plugin list.
+# * **loaded**; the plugin is now running.
+# * **unregistered**; the plugin has been removed from the loaded plugin list.
+# * **unloaded**; the plugin's `_unload` function has been called and all auto-deregistration tasks are completed.
+#
+# Events:
+#
+# * **load**; corresponds to the `@zplugins_plugin_load` function being called.
+# * **source**; evaluate the plugin source file using the shell builtin `source` command.
+# * **set**; set up the plugin by registering any relevant components.
+# * **add**; add the plugin to the managed list.
+# * **unload**; corresponds to the `@zplugins_plugin_unload` function being called.
+# * **shell-termination**; when a shell exits by any means.
+# * **remove**; remove the plugin from the managed list.
+# * **unset**; tear down the plugin by deregistering any relevant components.
 #
 # ### Plugin State Management
 #
@@ -99,10 +153,27 @@ done
 # @description Plugin system initialization.
 #
 
+#
+# Initialize the zplugins plugin, and set the manager flag.
+#
+# @example
+#    ZPLUGINS_PLUGIN_HOME=${XDG_DATA_HOME:-${HOME}/.local/share}/zsh/plugins
+#    source "${ZPLUGINS_PLUGIN_HOME}/zsh-zplugins-plugin/zplugins.plugin.zsh"
+#    @zplugins_init
+#
+# @arg $1 string A boolean to determine whether zplugins acts as the plugin manager.
+#
+# @set ZPLUGINS_USE_AS_MANAGER boolean Will be set to the value of arg-1, or 'no'.
+# @exitcode 0 Initialization was successful
+#
 @zplugins_init() {
     builtin emulate -L zsh
 
+    local as_manager=${1:-${ZPLUGINS_USE_AS_MANAGER}}
+    ZPLUGINS_USE_AS_MANAGER=${as_manager}
+
     # The file is obviously sourced at this point, so go ahead and setup this plugin.
+    # This will call `zplugins_plugin_init`, which in turn will call `.zplugins_manager_init`.
     .zplugins_plugin_setup zplugins "${ZPLUGINS[_PATH]}"
 
     return 0

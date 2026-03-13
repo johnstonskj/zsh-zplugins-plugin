@@ -1,6 +1,6 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
 #
-# @name env
+# @name Module env
 # @brief Plugin global variable helpers.
 #
 
@@ -30,6 +30,8 @@
 # @arg $1 string The plugin's name.
 # @arg $2 string Name of the environment variable to save.
 #
+# @see @zplugins_envvar_restore
+#
 @zplugins_envvar_save() {
     builtin emulate -L zsh
 
@@ -45,7 +47,10 @@
 #
 # @arg $1 string The plugin's name.
 # @arg $2 string Name of the environment variable to restore.
-# @set NAME
+#
+# @set {NAME} any Restore to original value.
+#
+# @see @zplugins_envvar_save
 #
 @zplugins_envvar_restore() {
     builtin emulate -L zsh

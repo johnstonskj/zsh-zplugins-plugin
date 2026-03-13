@@ -1,7 +1,7 @@
 # -*- mode: sh; eval: (sh-set-shell "zsh") -*-
 #
-# @name load
-# @brief Plugin loading functions.
+# @name Module load
+# @brief Plugin loading and unloading functions.
 #
 # @description
 #
@@ -14,7 +14,11 @@ declare -a ZPLUGINS_BOOTSTRAP_PLUGINS=( xdg shlog paths )
 #
 # @description
 #
+# TBD
+#
 # @noargs
+#
+# @see @zplugins_plugin_load
 #
 @zplugins_load_all_from_sheldon() {
     .zplugins_log_info zplugins "loading all plugins managed by sheldon"
@@ -40,32 +44,15 @@ declare -a ZPLUGINS_BOOTSTRAP_PLUGINS=( xdg shlog paths )
 }
 @zplugins_remember_fn zplugins @zplugins_load_all_from_sheldon
 
-# @internal
-.zplugins_load_bootstrap_plugins() {
-    .zplugins_log_info zplugins "loading plugins required to bootstrap .zshenv"
-
-    local plugin_name plugin_path
-    local -a plugin_list
-
-    for plugin_name in ${ZPLUGINS_BOOTSTRAP_PLUGINS[@]}; do
-        if ! @zplugins_is_loaded ${plugin}; then
-            plugin_path=$(.zplugins_find_load_path ${plugin_name})
-            if [[ $? -eq 0 ]]; then
-                plugin_list+=( "${plugin_name}=${plugin_path}" )
-            else
-                .zplugins_log_error ${plugin_name} "could not find path for plugin named '${plugin_name}'"
-            fi
-        fi
-    done
-
-    .zplugins_load_all_inner "${plugin_list[*]}"
-}
-@zplugins_remember_fn zplugins .zplugins_load_bootstrap_plugins
-
 #
 # @description
 #
+# Load all plugins in the global array `zplugins`. This allows a similar experience to other
+# plugin managers such as Oh-my-Zsh that use a global `plugins` array.
+#
 # @noargs
+#
+# @see @zplugins_plugin_load
 #
 @zplugins_load_all() {
     .zplugins_log_info zplugins "loading all plugins from global array 'zplugins': ${zplugins[*]}"
@@ -83,12 +70,43 @@ declare -a ZPLUGINS_BOOTSTRAP_PLUGINS=( xdg shlog paths )
     done
 
     .zplugins_load_all_inner "${plugin_list[*]}"
+    return $?
 }
 @zplugins_remember_fn zplugins @zplugins_load_all
 
 #
+# @description
+#
+# Load a plugin given a path and name. The path may be the the plugin's root file, or the directory
+# containing the root file, and the name may be optional. The table below shows the **valid**
+# combinations.
+#
+# | arg-1     | arg-2 | path                       | name          |
+# |-----------|-------|----------------------------|---------------|
+# | file-path | name  | file-path                  | name          |
+# | file-path | ''    | file-path                  | {file-path:t} |
+# | dir-path  | name  | dir-path/{name}.plugin.zsh | name          |
+#
+# Loading a plugin has a number of automatic registration activities, specifically:
+#
+# 1. Initialize the plugin's context in Zstyle.
+# 2. Parse header fields from the plugin's source file into the context.
+# 3. Check for any dependencies declared previously and determine if they are already loaded.
+# 4. Add the plugin's `bin` directory to `$PATH` if it exists.
+# 5. Add the plugin's `functions` directory to `$FPATH` if it exists.
+# 6. Remember all functions in the `functions` directory, if it exists.
+# 7. Add to the loaded plugin list.
+#
 # @arg $1 path Path to plugin file or directory.
-# @arg $2 string The plugin's (optional).
+# @arg $2 string The plugin's name (optional).
+#
+# @exitcode 0 Named plugin was loaded successfully.
+# @exitcode 1 Invalid parameters.
+# @exitcode 2 Invalid plugin file.
+#
+# @see [@zplugins_register_bin_dir](paths.md#zpluginsregisterbindir)
+# @see [@zplugins_register_function_dir](paths.md#zpluginsregisterfunctiondir)
+# @see [@zplugins_remember_fn](functions.md#zpluginsrememberfn)
 #
 @zplugins_plugin_load() {
     local plugin_path="${1:P}"
@@ -133,13 +151,37 @@ declare -a ZPLUGINS_BOOTSTRAP_PLUGINS=( xdg shlog paths )
         return 0
     else
         .zplugins_log_error zplugins "plugin path '${plugin_path}' is not a loadable file."
-        return 1
+        return 2
     fi
 }
 @zplugins_remember_fn zplugins @zplugins_plugin_load
 
 #
-# @arg $1 string The name of a loaded plugin.
+# @description
+#
+# Unload the named plugin. This unwinds all the automatic registration actions.
+#
+# 1. Call the plugin's `_unload` function.
+# 2. Call `unfunction` for all remembered plugin functions.
+# 3. Call `unalias` for all defined plugin aliases.
+# 4. Remove the plugin's `bin` directory from `$PATH`.
+# 5. Remove any plugin custom path entries from `$PATH`.
+# 6. Remove the plugin's `functions` directory from `$FPATH`.
+# 7. Remove any plugin custom function path entries from `$FPATH`.
+# 8. Remove plugin from loaded plugin list.
+#
+# @arg $1 string The name of a loaded plugin to unload.
+#
+# @exitcode 0 Named plugin was unloaded successfully.
+# @exitcode 1 Cannot unload the plugin `zplugins` _if_ it is acting as plugin manager.
+# @exitcode 2 Plugin has no context data.
+#
+# @see [@zplugins_unfunction_all](functions.md#zpluginsunfunctionall)
+# @see [@zplugins_unalias_all](aliases.md#zpluginsunaliasall)
+# @see [@zplugins_unregister_bin_dir](paths.md#zpluginsunregisterbindir)
+# @see [@zplugins_remove_from_path](paths.md#zpluginsremovefrompath)
+# @see [@zplugins_unregister_function_dir](paths.md#zpluginsunregisterfunctiondir)
+# @see [@zplugins_remove_from_fpath](paths.md#zpluginsremovefrom_path)
 #
 @zplugins_plugin_unload() {
     builtin emulate -L zsh
@@ -153,6 +195,7 @@ declare -a ZPLUGINS_BOOTSTRAP_PLUGINS=( xdg shlog paths )
 
     if [[ ${plugin_name} == zplugins && ${as_manager} ]]; then
         .zplugins_log_warning zplugins 'cannot unload plugin as it is acting as plugin manager'
+        return 1
     elif [[ -n "${plugin_data}" ]]; then
 
         # Call this first, this way the plugin removes any custom stuff while the 
@@ -186,15 +229,31 @@ declare -a ZPLUGINS_BOOTSTRAP_PLUGINS=( xdg shlog paths )
 
         .zplugins_log_info zplugins"plugin unloaded"
     else
-        .zplugins_log_warning zplugins "no context for plugin '${plugin_name}', cannot unload"
+        .zplugins_log_error zplugins "no context for plugin '${plugin_name}', cannot unload"
+        return 2
     fi
+    return 0
 }
 @zplugins_remember_fn zplugins @zplugins_unload
 
 #
+# @description
+#
+# Determine whether a named plugin is loaded.
+#
+# @example
+#    if @zplugins_is_loaded myplugin; then
+#        echo "myplugin is loaded"
+#    else
+#        echo "myplugin is not loaded"
+#    fi
+#
 # @arg $1 string The plugin's name.
+#
 # @exitcode 0 Named plugin is registered.
 # @exitcode 1 Named plugin is **not** registered.
+#
+# @see @zplugins_is_loaded
 #
 @zplugins_is_loaded() {
     builtin emulate -L zsh
@@ -210,8 +269,20 @@ declare -a ZPLUGINS_BOOTSTRAP_PLUGINS=( xdg shlog paths )
 @zplugins_remember_fn zplugins @zplugins_is_loaded
 
 #
+# @description
+#
+# Return an array of plugin names as a string.
+#
+# @example
+#    typeset -s name_str="$(@zplugins_loaded_plugin_names)"
+#    typeset -a names=( ${(z)name_str} )
+#    echo "Loaded plugins: ${(j:, :)names}."
+#
 # @noargs
-# @stdout Space-separated list of plugin names *directly* managed by `zplugins`.
+#
+# @stdout Space-separated list of plugin names _directly_ managed by `zplugins`.
+#
+# @see @zplugins_is_loaded
 #
 @zplugins_loaded_plugin_names() {
     builtin emulate -L zsh
@@ -224,6 +295,53 @@ declare -a ZPLUGINS_BOOTSTRAP_PLUGINS=( xdg shlog paths )
 }
 @zplugins_remember_fn zplugins @zplugins_loaded_plugin_names
 
+###################################################################################################
+# Internal
+###################################################################################################
+
+# @internal
+# @description
+#
+# Load all the plugins required for initial execution of the plugin manager. These plugins are
+# defined in the global array `ZPLUGINS_BOOTSTRAP_PLUGINS`.
+#
+# @noargs
+#
+.zplugins_load_bootstrap_plugins() {
+    .zplugins_log_info zplugins "loading plugins required to bootstrap .zshenv"
+
+    local plugin_name plugin_path
+    local -a plugin_list
+
+    for plugin_name in ${ZPLUGINS_BOOTSTRAP_PLUGINS[@]}; do
+        if ! @zplugins_is_loaded ${plugin}; then
+            plugin_path=$(.zplugins_find_load_path ${plugin_name})
+            if [[ $? -eq 0 ]]; then
+                plugin_list+=( "${plugin_name}=${plugin_path}" )
+            else
+                .zplugins_log_error ${plugin_name} "could not find path for plugin named '${plugin_name}'"
+            fi
+        fi
+    done
+
+    .zplugins_load_all_inner "${plugin_list[*]}"
+    return $?
+}
+@zplugins_remember_fn zplugins .zplugins_load_bootstrap_plugins
+
+#
+# @internal
+# @description
+#
+# Add the named plugin to the loaded plugin list, and update the plugin manager.
+#
+# @arg $1 string The plugin's name.
+#
+# @exitcode 0 Success
+# @exitcode 1 Named plugin **already** in the loaded plugin list.
+#
+# @see .zplugins_remove_loaded_plugin
+#
 .zplugins_add_loaded_plugin() {
     local plugin_name="${1}"
 
@@ -232,10 +350,25 @@ declare -a ZPLUGINS_BOOTSTRAP_PLUGINS=( xdg shlog paths )
         .zplugins_manager_update
     else
         .zplugins_log_error zplugins "plugin ${plugin_name} already in loaded list"
+        return 1
     fi
+    return 0
 }
 @zplugins_remember_fn zplugins .zplugins_add_loaded_plugin
 
+#
+# @internal
+# @description
+#
+# Remove the named plugin from the loaded plugin list, and update the plugin manager.
+#
+# @arg $1 string The plugin's name.
+#
+# @exitcode 0 Success
+# @exitcode 1 Named plugin **not** in the loaded plugin list.
+#
+# @see .zplugins_add_loaded_plugin
+#
 .zplugins_remove_loaded_plugin() {
     local plugin_name="${1}"
 
@@ -244,15 +377,21 @@ declare -a ZPLUGINS_BOOTSTRAP_PLUGINS=( xdg shlog paths )
         .zplugins_manager_update
     else
         .zplugins_log_error zplugins "plugin ${plugin_name} not in loaded list"
+        return 1
     fi
+    return 0
 }
 @zplugins_remember_fn zplugins .zplugins_add_loaded_plugin
 
-###################################################################################################
-# Internal
-###################################################################################################
-
+#
 # @internal
+# @description
+#
+# @arg $1 string The plugin's name.
+#
+# @exitcode 0 Success
+# @exitcode 1 No path found for the plugin.
+#
 .zplugins_find_load_path() {
     local plugin_name="${1}"
     local -a try_dirs
@@ -275,7 +414,21 @@ declare -a ZPLUGINS_BOOTSTRAP_PLUGINS=( xdg shlog paths )
 }
 @zplugins_remember_fn zplugins .zplugins_find_load_path
 
+#
 # @internal
+# @description
+#
+# Takes an array of plugin name/path pairs and loads each in turn. The string may contain
+# just the name, just the path, or both.
+#
+# * `name=path`; both name and path are known.
+# * `=path`; only the path is known.
+# * `name`; only the name is known.
+#
+# @arg $1 array An array of strings where each is a plugin name/path pair.
+#
+# @exitcode 0 Success
+#
 .zplugins_load_all_inner() {
     local -a plugin_list=( ${(@s: :)1} )
     local entry parts load_path
@@ -299,10 +452,22 @@ declare -a ZPLUGINS_BOOTSTRAP_PLUGINS=( xdg shlog paths )
             .zplugins_log_error zplugins "badly formed load string '${entry}'"
         fi
     done
+
+    return 0
 }
 @zplugins_remember_fn zplugins .zplugins_load_all_inner
 
+#
 # @internal
+# @description
+#
+# @arg $1 string The plugin's name.
+# @arg $2 path The plugin file's absolute path.
+#
+# @exitcode 0 Success
+# @exitcode 1 Plugin already setup
+# @exitcode 2 Plugin _init function error
+#
 .zplugins_plugin_setup() {
     builtin emulate -L zsh
 
@@ -356,11 +521,14 @@ declare -a ZPLUGINS_BOOTSTRAP_PLUGINS=( xdg shlog paths )
         if whence -f ${plugin_name}_plugin_init &> /dev/null; then
             @zplugins_remember_fn "${plugin_name}" ${plugin_name}_plugin_init
             if ! ${plugin_name}_plugin_init "${plugin_path}" "${plugin_name}"; then
-                .zplugins_log_error "${plugin_name}" "plugin's _init function returned non-zero"
+                .zplugins_log_error "${plugin_name}" "plugin's _init function returned non-zero; errno: $?"
+                return 2
             fi
         fi
     else
         .zplugins_log_warning zplugins "plugin '${plugin_name}' already setup, cannot re-setup"
+        return 1
     fi
+    return 0
 }
 @zplugins_remember_fn zplugins .zplugins_plugin_setup
