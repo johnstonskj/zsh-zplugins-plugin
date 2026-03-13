@@ -44,7 +44,9 @@
             break
         fi
     done < "${plugin_file_path}"
-    return 0
+
+    # shellcheck disable=SC2086
+    return ${EC_SUCCESS}
 }
 
 #

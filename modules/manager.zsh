@@ -20,7 +20,8 @@
         typeset -ga zsh_loaded_plugins=()
         typeset -g PMSPEC="fbis"
     fi
-    return 0
+    # shellcheck disable=SC2086
+    return ${EC_SUCCESS}
 }
 @zplugins_remember_fn zplugins .zplugins_manager_init
 

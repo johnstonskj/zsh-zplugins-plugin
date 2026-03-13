@@ -100,6 +100,7 @@
 # * [aliases](./modules/aliases.md)
 # * [context](./modules/context.md)
 # * [env](./modules/env.md)
+# * [errors](./modules/errors.md)
 # * [fields](./modules/fields.md)
 # * [functions](./modules/functions.md)
 # * [load](./modules/load.md)
@@ -132,6 +133,8 @@ else
     typeset -ga zplugins
 fi
 
+
+
 ###################################################################################################
 # @section modules
 # @description Load the rest of the modules.
@@ -139,7 +142,19 @@ fi
 
 source "${ZPLUGINS[_MODULE_PATH]}/log.zsh"
 
-declare -a zplugins_all_modules=( functions aliases context depends env fields load manager paths )
+declare -a zplugins_all_modules=( # Note this array is order dependent.
+    errors
+    booleans
+    functions
+    aliases
+    context
+    depends
+    env
+    fields
+    load
+    manager
+    paths
+)
 declare -a zplugins_only=( "${(z)ZPLUGINS_ONLY_MODULES}" )
 
 for module in ${zplugins_all_modules[@]}; do
@@ -176,7 +191,7 @@ done
     # This will call `zplugins_plugin_init`, which in turn will call `.zplugins_manager_init`.
     .zplugins_plugin_setup zplugins "${ZPLUGINS[_PATH]}"
 
-    return 0
+    return EC_SUCCESS
 }
 
 ###################################################################################################
@@ -194,7 +209,7 @@ zplugins_plugin_init() {
     # initialize as plugin manager, IF required.
     .zplugins_manager_init
 
-    return 0
+    return EC_SUCCESS
 }
 
 # @internal
@@ -203,5 +218,5 @@ zplugins_plugin_unload() {
 
     unset ZPLUGINS
 
-    return 0
+    return EC_SUCCESS
 }

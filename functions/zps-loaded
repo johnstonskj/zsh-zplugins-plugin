@@ -37,6 +37,7 @@ content="# Loaded Plugins\n"
 printf -v line "| %-${name_max}s | %-${descr_max}s | %-${version_max}s |" "Name" "Description" "Version"
 content="${content}\n${line}"
 
+# shellcheck disable=SC2296
 printf -v line "| %s | %s | %s |" "${(l(${name_max})(-))}" "${(l(${descr_max})(-))}" "${(l(${version_max})(-))}"
 content="${content}\n${line}"
 
@@ -68,4 +69,5 @@ else
     fi
 fi
 
-return 0
+# shellcheck disable=SC2086
+return ${EC_SUCCESS}

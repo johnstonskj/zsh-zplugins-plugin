@@ -142,4 +142,5 @@ else
     fi
 fi
 
-return 0
+# shellcheck disable=SC2086
+return ${EC_SUCCESS}
