@@ -33,6 +33,8 @@ typeset -gir EC_ARG_ERROR=2
 typeset -gir EC_EXEC_ERROR=3
 typeset -gir EC_EXISTS_ERROR=4
 typeset -gir EC_NOT_FOUND_ERROR=5
+typeset -gir EC_NOT_INSTALLED_ERROR=6
+typeset -gir EC_ALREADY_INSTALLED_ERROR=7
 
 #
 # @description Test whether it's argument equals `EC_SUCCESS`.
